@@ -5,9 +5,7 @@
 ## 功能特性
 
 - ✅ TrueType 中文字体渲染支持
-- ✅ VNC 驱动中文支持
-- ✅ DPF (数码相框) 驱动中文支持
-- ✅ SamsungSPF (三星电子相框) 驱动中文支持
+- ✅ 所有图形驱动支持中文显示
 - ✅ 所有驱动已编译
 - ✅ 支持 UTF-8 中文显示
 
@@ -183,18 +181,17 @@ fc-list :lang=zh
 
 ## 驱动列表
 
-支持以下显示驱动：
+支持以下显示驱动，所有图形驱动均支持中文显示：
 
 | 驱动 | 说明 |
 |------|------|
 | VNC | VNC 服务器 ✅ 中文 |
 | DPF | 数码相框 ✅ 中文 |
 | SamsungSPF | 三星电子相框 ✅ 中文 |
-| X11 | X11 显示 |
-| HD44780 | 字符 LCD |
-| MatrixOrbital | Matrix Orbital LCD |
-| Crystalfontz | Crystalfontz LCD |
-| ... | 更多驱动 |
+| T6963 | T6963 LCD 控制器 ✅ 中文 |
+| G15 | Logitech G15 键盘 ✅ 中文 |
+| X11 | X11 显示 ✅ 中文 |
+| 其他 | 所有 drv_generic_graphic 驱动 ✅ 中文 |
 
 ## 常见问题
 
