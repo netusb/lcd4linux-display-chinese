@@ -61,6 +61,7 @@
 #include "widget.h"
 #include "widget_keypad.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 #include "drv_generic_keypad.h"
 
 #ifdef WITH_DMALLOC

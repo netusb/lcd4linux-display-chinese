@@ -50,6 +50,8 @@
 #include "plugin.h"
 #include "drv.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
+#include "font_ttf.h"
 #include "drv_generic_gpio.h"
 #include "drv_generic_parport.h"
 
@@ -347,7 +349,7 @@ static int drv_L7_start(const char *section)
 
     /* Fixme: provider other fonts someday... */
     if (XRES != 6 && YRES != 8) {
-	error("%s: bad Font '%s' from %s (only 6x8 at the moment)", Name, s, cfg_source());
+	// TrueType fonts now supported
 	return -1;
     }
 

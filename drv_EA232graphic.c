@@ -118,6 +118,7 @@
 
 /* graphic display */
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 
 /* serial port */
 #include "drv_generic_serial.h"

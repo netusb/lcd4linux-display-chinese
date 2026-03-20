@@ -50,6 +50,7 @@
 #include "plugin.h"
 #include "drv.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 #include "drv_generic_parport.h"
 
 #ifdef WITH_DMALLOC
@@ -383,12 +384,38 @@ static int drv_T6_start(const char *section)
 	return -1;
     }
 
-    if (sscanf(s = cfg_get(section, "font", "6x8"), "%dx%d", &XRES, &YRES) != 2 || XRES < 1 || YRES < 1) {
-	error("%s: bad %s.Font '%s' from %s", Name, section, s, cfg_source());
-	free(s);
-	return -1;
+    /* get font */
+    char *font_str = cfg_get(section, "font", "6x8");
+    if (font_str == NULL || *font_str == '\0') {
+        error("%s: no '%s.font' entry from %s", Name, section, cfg_source());
+        return -1;
     }
-    free(s);
+    
+    /* Check if Font is a TrueType font file */
+    if (strchr(font_str, '/') != NULL || strstr(font_str, ".ttf") != NULL || strstr(font_str, ".TTF") != NULL || strstr(font_str, ".otf") != NULL) {
+        char *size_str = cfg_get(section, "FontSize", "16");
+        int font_size = atoi(size_str);
+        if (font_size < 8) font_size = 8;
+        if (font_size > 64) font_size = 64;
+        free(size_str);
+        
+        if (font_ttf_init(font_str, font_size) != 0) {
+            error("%s: failed to load TrueType font '%s'", Name, font_str);
+            free(font_str);
+            return -1;
+        }
+        
+        XRES = font_ttf_get_width();
+        YRES = font_ttf_get_height();
+        info("%s: using TrueType font '%s' size %d", Name, font_str, font_size);
+    } else {
+        if (sscanf(font_str, "%dx%d", &XRES, &YRES) != 2 || XRES < 1 || YRES < 1) {
+            error("%s: bad %s.Font '%s' from %s", Name, section, font_str, cfg_source());
+            free(font_str);
+            return -1;
+        }
+    }
+    free(font_str);
 
 
     /* get font width of display */
@@ -552,6 +579,7 @@ int drv_T6_quit(const int quiet)
     }
 
     drv_generic_graphic_quit();
+    font_ttf_quit();
     drv_generic_parport_close();
 
     if (Buffer1) {

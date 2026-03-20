@@ -73,6 +73,7 @@
 #include "plugin.h"
 #include "drv.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 
 #ifdef WITH_DMALLOC
 #include <dmalloc.h>

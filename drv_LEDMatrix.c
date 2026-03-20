@@ -65,6 +65,7 @@
 #include "widget_bar.h"
 #include "drv.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 
 /* display command bytes */
 #define DSP_CMD_ECHO  0

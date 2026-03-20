@@ -61,6 +61,7 @@
 #include "widget_keypad.h"
 #include "drv.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 #include "drv_generic_keypad.h"
 
 /* Numeric constants for 'reportType' parameters */

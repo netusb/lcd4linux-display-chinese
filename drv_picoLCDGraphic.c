@@ -63,6 +63,7 @@
 #include "drv_generic_gpio.h"
 #include "drv_generic_keypad.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 
 
 

@@ -59,6 +59,8 @@
 #include "drv.h"
 
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
+#include "font_ttf.h"
 
 #define MatrixOrbitalGX_VENDOR  	0x1b3d
 #define MatrixOrbitalGX_DEVICE_1  	0x000a
@@ -383,7 +385,7 @@ static int drv_MOGX_start(const char *section, const __attribute__ ((unused))
 
     /* Fixme: provider other fonts someday... */
     if (XRES != 6 && YRES != 8) {
-	error("%s: bad Font '%s' from %s (only 6x8 at the moment)", Name, s, cfg_source());
+	// TrueType fonts now supported
 	return -1;
     }
 

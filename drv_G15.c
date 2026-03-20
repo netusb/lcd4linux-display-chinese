@@ -55,6 +55,7 @@
 #include "plugin.h"
 #include "drv.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 #include "thread.h"
 
 /* Logitech: VendorID 0x046d */
@@ -511,20 +512,39 @@ static int drv_G15_start(const char *section)
 	return -1;
     }
 
-    XRES = -1;
-    YRES = -1;
-    if (sscanf(s, "%dx%d", &XRES, &YRES) != 2 || XRES < 1 || YRES < 1) {
-	error("%s: bad Font '%s' from %s", Name, s, cfg_source());
-	return -1;
-    }
+    /* Check if Font is a TrueType font file */
+    if (strchr(s, '/') != NULL || strstr(s, ".ttf") != NULL || strstr(s, ".TTF") != NULL || strstr(s, ".otf") != NULL) {
+        char *size_str = cfg_get(section, "FontSize", "16");
+        int font_size = atoi(size_str);
+        if (font_size < 8) font_size = 8;
+        if (font_size > 64) font_size = 64;
+        free(size_str);
+        
+        if (font_ttf_init(s, font_size) != 0) {
+            error("%s: failed to load TrueType font '%s'", Name, s);
+            free(s);
+            return -1;
+        }
+        
+        XRES = font_ttf_get_width();
+        YRES = font_ttf_get_height();
+        info("%s: using TrueType font '%s' size %d", Name, s, font_size);
+    } else {
+        XRES = -1;
+        YRES = -1;
+        if (sscanf(s, "%dx%d", &XRES, &YRES) != 2 || XRES < 1 || YRES < 1) {
+            error("%s: bad Font '%s' from %s", Name, s, cfg_source());
+            free(s);
+            return -1;
+        }
 
-    /* Fixme: provider other fonts someday... */
-    if (XRES != 6 && YRES != 8) {
-	error("%s: bad Font '%s' from %s (only 6x8 at the moment)", Name, s, cfg_source());
-	return -1;
+        if (XRES != 6 || YRES != 8) {
+            error("%s: bad Font '%s' from %s (only 6x8 at the moment)", Name, s, cfg_source());
+            free(s);
+            return -1;
+        }
     }
-
-    DEBUG("Finished config stuff");
+    free(s);
 
     DEBUG("allocating image buffer");
     /* you surely want to allocate a framebuffer or something... */
@@ -648,6 +668,7 @@ int drv_G15_quit(const int quiet)
 
     DEBUG("generic_graphic_quit()");
     drv_generic_graphic_quit();
+    font_ttf_quit();
 
     mutex_destroy(kb_mutex);
     usleep(10 * 1000);

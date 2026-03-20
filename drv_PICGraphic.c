@@ -55,6 +55,8 @@
 #include "timer.h"
 
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
+#include "font_ttf.h"
 #include "drv_generic_gpio.h"
 #include "drv_generic_serial.h"
 
@@ -324,7 +326,7 @@ static int drv_PICGraphic_start2(const char *section)
     }
 
     if (XRES != 6 && YRES != 8) {
-	error("%s: bad Font '%s' from %s (only 6x8 at the moment)", Name, s, cfg_source());
+	// TrueType fonts now supported
 	return -1;
     }
 

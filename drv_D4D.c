@@ -59,6 +59,7 @@
 
 #include "drv_generic_text.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 #include "drv_generic_serial.h"
 
 #include <sys/ioctl.h>

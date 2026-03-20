@@ -51,6 +51,7 @@
 #include "timer.h"
 #include "drv.h"
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 #include "drv_generic_gpio.h"
 
 // Values for transaction's data packet.
