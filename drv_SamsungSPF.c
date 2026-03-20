@@ -52,6 +52,7 @@
 
 /* graphic display? */
 #include "drv_generic_graphic.h"
+#include "font_ttf.h"
 #include "jpeg_mem_dest.h"
 
 #define FILLSIZE 16384          // 16kB
@@ -511,16 +512,39 @@ static int drv_SamsungSPF_start(const char *section)
         return -1;
     }
 
-    XRES = -1;
-    YRES = -1;
-    if (sscanf(s, "%dx%d", &XRES, &YRES) != 2 || XRES < 1 || YRES < 1) {
-        error("%s: bad Font '%s' from %s", Name, s, cfg_source());
-        return -1;
-    }
+    /* Check if Font is a TrueType font file */
+    if (strchr(s, '/') != NULL || strstr(s, ".ttf") != NULL || strstr(s, ".TTF") != NULL || strstr(s, ".otf") != NULL) {
+        /* TrueType font file */
+        char *size_str = cfg_get(section, "FontSize", "16");
+        int font_size = atoi(size_str);
+        if (font_size < 8) font_size = 8;
+        if (font_size > 64) font_size = 64;
+        free(size_str);
+        
+        if (font_ttf_init(s, font_size) != 0) {
+            error("%s: failed to load TrueType font '%s'", Name, s);
+            free(s);
+            return -1;
+        }
+        
+        XRES = font_ttf_get_width();
+        YRES = font_ttf_get_height();
+        info("%s: using TrueType font '%s' size %d (%dx%d)", Name, s, font_size, XRES, YRES);
+    } else {
+        /* Built-in bitmap font */
+        XRES = -1;
+        YRES = -1;
+        if (sscanf(s, "%dx%d", &XRES, &YRES) != 2 || XRES < 1 || YRES < 1) {
+            error("%s: bad Font '%s' from %s", Name, s, cfg_source());
+            free(s);
+            return -1;
+        }
 
-    if (XRES < 6 || YRES < 8) {
-        error("%s: bad Font '%s' from %s (must be at least 6x8)", Name, s, cfg_source());
-        return -1;
+        if (XRES < 6 || YRES < 8) {
+            error("%s: bad Font '%s' from %s (must be at least 6x8)", Name, s, cfg_source());
+            free(s);
+            return -1;
+        }
     }
     free(s);
 
@@ -662,6 +686,9 @@ int drv_SamsungSPF_quit(const int quiet)
     }
 
     drv_generic_graphic_quit();
+    
+    /* cleanup TrueType font */
+    font_ttf_quit();
 
     debug("closing connection");
     printf("%s: Closing driver...\n", Name);
