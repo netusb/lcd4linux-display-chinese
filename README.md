@@ -94,19 +94,11 @@ make install
 Display VNC {
     Driver       'VNC'
     Font         '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
-    FontSize     '16'
+    FontSize     '16'        # 可选: 8-64
     Port         '5900'
     Xres         '320'
     Yres         '240'
     Bpp          '4'
-    Password     '123456'
-}
-
-Widget Time {
-    class 'Text'
-    expression strftime('%H:%M:%S', time())
-    width 8
-    speed 1000
 }
 
 Widget Test {
@@ -116,8 +108,7 @@ Widget Test {
 }
 
 Layout Main {
-    Row1 { Col1 'Time' }
-    Row2 { Col1 'Test' }
+    Row1 { Col1 'Test' }
 }
 
 Display 'VNC'
@@ -131,13 +122,7 @@ Display DPF {
     Driver       'DPF'
     Port         'usb0'
     Font         '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
-    FontSize     '24'
-}
-
-Widget Test {
-    class 'Text'
-    expression '中文测试'
-    width 30
+    FontSize     '24'        # 可选: 8-64
 }
 
 Layout Main {
@@ -165,7 +150,7 @@ fc-list :lang=zh
 | 参数 | 说明 | 示例 |
 |------|------|------|
 | Font | 字体文件路径 | `/usr/share/fonts/.../NotoSansCJK-Regular.ttc` |
-| FontSize | 字号 | `16`, `18`, `24` |
+| FontSize | 字号（自定义） | `8` - `64` |
 
 ## 目录结构
 
