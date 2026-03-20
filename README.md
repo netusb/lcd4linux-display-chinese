@@ -7,7 +7,7 @@
 - ✅ TrueType 中文字体渲染支持
 - ✅ VNC 驱动中文支持
 - ✅ DPF (数码相框) 驱动中文支持
-- ✅ SamsungSPF 驱动支持
+- ✅ SamsungSPF (三星电子相框) 驱动中文支持
 - ✅ 所有驱动已编译
 - ✅ 支持 UTF-8 中文显示
 
@@ -187,9 +187,9 @@ fc-list :lang=zh
 
 | 驱动 | 说明 |
 |------|------|
-| VNC | VNC 服务器，支持中文 |
-| DPF | 数码相框，支持中文 |
-| SamsungSPF | 三星电子相框 |
+| VNC | VNC 服务器 ✅ 中文 |
+| DPF | 数码相框 ✅ 中文 |
+| SamsungSPF | 三星电子相框 ✅ 中文 |
 | X11 | X11 显示 |
 | HD44780 | 字符 LCD |
 | MatrixOrbital | Matrix Orbital LCD |
