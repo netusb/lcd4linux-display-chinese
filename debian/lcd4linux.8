@@ -1,0 +1,71 @@
+.TH VERSION "8" "March 2012" "http://ssl.bulix.org/projects/lcd4linux/" "System Administration Utilities"
+.SH NAME
+Version \- daemon for ''lcd'' display devices
+.SH SYNOPSIS
+.B lcd4linux [\fIOPTIONS...\fR]
+.SH DESCRIPTION
+.PP
+LCD4Linux is a small program that grabs information from the kernel and
+some subsystems and displays it on an external liquid crystal display.
+.PP
+If started without any options, it will try to read its configuration from 
+\fB/etc/lcd4linux.conf\fR and daemonize. Please make sure your configuration file
+is owned by the user you run lcd4linux (typically \fIroot\fR) and has permissions
+\fB600\fR.
+.TP
+\fB\-f\fR
+Alternate configuration file to read. Use this switch to make lcd4linux read another
+file than \fI/etc/lcd4linux.conf\fR.
+.TP
+\fB\-F\fR
+Run in forground and don't daemonize. Useful for debugging.
+.TP
+\fB\-c\fR \fIarg\fR
+allows one to overwrite entries in the config-file from the command line. arg is 'key=value'
+.TP
+\fB\-h\fR
+shows a really short usage of lcd4linux
+.TP
+\fB\-i\fR
+starts lcd4linux in interactive mode. Can be used multiple times
+.TP
+\fB\-l\fR
+Prints a list of supported displays
+.TP
+\fB\-o\fR
+Specifies an output file (see http://ssl.bulix.org/projects/lcd4linux/ for details)
+.TP
+\fB\-q\fR
+makes lcd4linux more quiet. Can be used multiple times
+.TP
+\fB\-v\fR
+increases verbose level. Can be used multiple times
+.SH FILES
+.TP
+.I "/etc/lcd4linux.conf"
+Contains the configuration of lcd4linux. Please note that distributions
+generally don't install this file, please create it yourself using the
+sample configuration as template.
+.TP
+.I "/usr/share/doc/lcd4linux/lcd4linux.conf.sample.gz"
+Contains a detailed and extensive example configuration file
+.SH AUTHOR
+lcd4linux was written by Michael Reinelt <reinelt@eunet.at>
+.br
+Copyright (C) 2005 The LCD4Linux Team <lcd4linux\-devel@users.sourceforge.net>
+.SH ORIGIN
+Development of lcd4linux is at http://ssl.bulix.org/projects/lcd4linux/. Use that
+web service for reporting upstream bugs getting in touch with development.
+.SH COPYRIGHT
+This manual page was written by Reinhard Tartler <siretart@tauware.de>
+in August 2006, for the Debian project, but may also be used by others. Revised
+by Jonathan McCrohan <jmccrohan@gmail.com> in March 2012.
+.br
+This manual page and lcd4linux is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the
+License, or (at your option) any later version.
+.br
+On Debian systems, the complete text of the GNU General Public
+License, version 2, can be found in /usr/share/common-licenses/GPL-2.
+

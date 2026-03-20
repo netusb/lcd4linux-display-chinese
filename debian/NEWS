@@ -1,0 +1,10 @@
+lcd4linux (0.11.0~svn1165-1) unstable; urgency=low
+
+  As of 0.11.0~svn1165-1, direct raw parallel port access has been disabled
+  by default. The generic_parport driver depended on sys/io.h which is not
+  available on all architectures. This change means that lcd4linux is now
+  available on the mipsel, powerpc, s390x and sparc architectures. If you
+  still require raw I/O, you can uncomment the --with-outb argument in
+  debian/rules and rebuild the package.
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Tue, 27 Dec 2011 00:27:15 +0000

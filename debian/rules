@@ -1,0 +1,46 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+
+override_dh_autoreconf:
+	ln -s . m4
+	dh_autoreconf -a
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		--prefix=/usr \
+		--mandir=\$${prefix}/share/man \
+		--infodir=\$${prefix}/share/info \
+		--bindir=/usr/sbin \
+		--disable-rpath \
+# Enable raw parallel port I/O
+#		--with-outb
+
+override_dh_installman:
+	dh_installman debian/lcd4linux.8
+
+override_dh_install:
+	dh_install
+	sed -e "1c lcd4linux debian sample config" \
+		-e "2d" \
+		-e "3a This is a dummy config file using the NULL driver." \
+		-e "3a Please amend this file as required by your specific LCD device." \
+		-e "s@#Display 'NULL'@Display 'NULL'@" \
+		-e "s@Display 'ACool'@#Display 'ACool'@" \
+		-e "s@Layout 'TestLayer'@#Layout 'TestLayer'@" \
+		-e "s@#Layout 'Default'@Layout 'Default'@" \
+		lcd4linux.conf.sample > debian/lcd4linux/etc/lcd4linux.conf
+	chmod 600 debian/lcd4linux/etc/lcd4linux.conf
+
+override_dh_fixperms:
+	dh_fixperms -X debian/lcd4linux/etc/lcd4linux.conf
+
+%:
+	dh $@
+
+get-orig-source:
+	debian/get-svn-source.sh

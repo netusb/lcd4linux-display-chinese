@@ -1,0 +1,46 @@
+# Build artifacts
+*.o
+*.lo
+*.Po
+*.Plo
+*.a
+*.la
+*.so
+*.so.*
+*.dylib
+
+# Autotools files
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+compile
+config.guess
+config.h
+config.h.in~
+config.log
+config.status
+config.sub
+configure
+configure~
+depcomp
+install-sh
+ltmain.sh
+missing
+mkinstalldirs
+
+# Backup files
+*~
+*.bak
+*.orig
+*.rej
+
+# IDE files
+.*.swp
+.*.swo
+
+# Build directories
+.deps/
+.libs/
+.libs
+.pc/
