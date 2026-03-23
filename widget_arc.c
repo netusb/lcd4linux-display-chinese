@@ -133,6 +133,11 @@ int widget_arc_init(WIDGET * Self)
     Arc->needle_color.B = 0;
     Arc->needle_color.A = 255;
 
+    Arc->tick_color.R = 200;
+    Arc->tick_color.G = 200;
+    Arc->tick_color.B = 200;
+    Arc->tick_color.A = 255;
+
     Arc->center_color.R = 200;
     Arc->center_color.G = 200;
     Arc->center_color.B = 200;
@@ -160,6 +165,10 @@ int widget_arc_init(WIDGET * Self)
         if (color && *color && color2RGBA(color, &c) >= 0) Arc->needle_color = c;
         if (color) free(color);
         
+        color = cfg_get(section, "tick", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) Arc->tick_color = c;
+        if (color) free(color);
+        
         color = cfg_get(section, "center", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) Arc->center_color = c;
         if (color) free(color);
@@ -172,6 +181,7 @@ int widget_arc_init(WIDGET * Self)
     /* ensure alpha is 255 */
     Arc->arc_color.A = 255;
     Arc->needle_color.A = 255;
+    Arc->tick_color.A = 255;
     Arc->center_color.A = 255;
     Arc->bg_color.A = 255;
 

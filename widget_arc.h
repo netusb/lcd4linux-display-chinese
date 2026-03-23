@@ -36,6 +36,7 @@ typedef struct WIDGET_ARC {
     int num_minor;
     RGBA arc_color;
     RGBA needle_color;
+    RGBA tick_color;
     RGBA center_color;
     RGBA text_color;
     RGBA bg_color;
