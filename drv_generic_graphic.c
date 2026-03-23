@@ -1018,12 +1018,8 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
         int ticks_per_interval = Arc->num_minor;
         int total_minor = intervals * ticks_per_interval;
         
-        /* minor tick color - dimmer version of arc color */
-        RGBA minor_tick_color;
-        minor_tick_color.R = arc_color.R / 3;
-        minor_tick_color.G = arc_color.G / 3;
-        minor_tick_color.B = arc_color.B / 3;
-        minor_tick_color.A = 255;
+        /* minor tick color - use needle color for visibility */
+        RGBA minor_tick_color = needle_color;
         
         for (i = 1; i < total_minor; i++) {  /* skip i=0 (major tick position) */
             /* skip positions that coincide with major ticks (multiples of ticks_per_interval) */
@@ -1034,7 +1030,7 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
             if (tick_angle < 0) tick_angle += 360;
             double rad = tick_angle * M_PI / 180.0;
             int inner = radius - Arc->thickness - 1;
-            int outer = radius + 1;
+            int outer = radius + 3;  /* slightly longer for visibility */
             
             int x1 = cx + (int)(inner * cos(rad));
             int y1 = cy - (int)(inner * sin(rad));
