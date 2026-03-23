@@ -8,6 +8,8 @@
 - ✅ 所有图形驱动支持中文显示
 - ✅ 所有驱动已编译
 - ✅ 支持 UTF-8 中文显示
+- ✅ Graph 组件 (AIDA64 风格折线图)
+- ✅ Arc 组件 (AIDA64 风格弧形仪表盘)
 
 ## 预编译版本
 
@@ -133,6 +135,117 @@ Display 'DPF'
 Layout 'Main'
 ```
 
+## Graph 组件 (折线图)
+
+Graph 组件用于显示数据的历史变化趋势，类似于 AIDA64 的性能监控折线图。
+
+### 配置参数
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| expression | 数据表达式 | 必需 |
+| min | 最小值 | 0 |
+| max | 最大值 | 100 |
+| update | 更新间隔(毫秒) | 1000 |
+| points | 数据点数量 | 50 |
+| style | 样式 (0=线, 1=面积) | 0 |
+| color | 线条颜色 | #00FF00 |
+| fill | 填充颜色 | #008000 |
+| bg | 背景颜色 | #000000 |
+| grid | 网格颜色 | #404040 |
+
+### 使用示例
+
+```conf
+Widget CPU_Graph {
+    class 'graph'
+    expression 'cpu::cpu0'
+    width 100
+    height 40
+    min 0
+    max 100
+    update 500
+    points 60
+    style 1              # 1=面积填充, 0=纯线条
+    color '#00FF00'      # 绿色线条
+    fill '#003300'       # 半透明绿色填充
+}
+
+Widget Memory_Graph {
+    class 'graph'
+    expression 'mem::used'
+    width 100
+    height 40
+    min 0
+    max 'mem::total'
+    update 1000
+    points 50
+}
+
+Layout Main {
+    Row1 { Col1 'CPU_Graph' }
+    Row2 { Col1 'Memory_Graph' }
+}
+```
+
+## Arc 组件 (弧形仪表盘)
+
+Arc 组件用于显示单个数值的仪表盘，类似于汽车速度表或 AIDA64 的传感器显示。
+
+### 配置参数
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| expression | 数据表达式 | 必需 |
+| min | 最小值 | 0 |
+| max | 最大值 | 100 |
+| update | 更新间隔(毫秒) | 1000 |
+| style | 样式 (semi/quarter/full) | semi |
+| ticks | 主刻度数量 | 5 |
+| minor | 主刻度间小刻度数量 | 5 |
+| thickness | 弧线厚度 | 8 |
+| arc | 弧线背景颜色 | #404040 |
+| needle | 指针颜色 | #FF0000 |
+| center | 中心圆颜色 | #808080 |
+| bg | 背景颜色 | #000000 |
+
+### 使用示例
+
+```conf
+Widget CPU_Arc {
+    class 'arc'
+    expression 'cpu::used'
+    width 80
+    height 50
+    min 0
+    max 100
+    update 1000
+    style 'semi'         # semi=半圆, quarter=四分之一, full=整圆
+    ticks 5
+    minor 5
+    thickness 8
+    needle '#FF0000'     # 红色指针
+    arc '#404040'        # 灰色弧线背景
+}
+
+Widget Temperature_Arc {
+    class 'arc'
+    expression 'thermal::thermal_zone0'
+    width 60
+    height 40
+    min 30
+    max 90
+    update 2000
+    style 'semi'
+    ticks 6
+    thickness 6
+}
+
+Layout Main {
+    Row1 { Col1 'CPU_Arc' Col2 'Temperature_Arc' }
+}
+```
+
 ## 字体配置
 
 ### 安装中文字体
@@ -157,6 +270,10 @@ fc-list :lang=zh
 ```
 ├── font_ttf.c          # TrueType 字体渲染模块
 ├── font_ttf.h          # 字体模块头文件
+├── widget_graph.c      # Graph 组件实现
+├── widget_graph.h      # Graph 组件头文件
+├── widget_arc.c        # Arc 组件实现
+├── widget_arc.h        # Arc 组件头文件
 ├── drv_vnc.c           # VNC 驱动 (已修改支持中文)
 ├── drv_dpf.c           # DPF 驱动 (已修改支持中文)
 ├── drv_generic_graphic.c # 通用图形驱动
