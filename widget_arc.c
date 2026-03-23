@@ -68,8 +68,8 @@ int widget_arc_init(WIDGET * Self)
     Arc = malloc(sizeof(WIDGET_ARC));
     memset(Arc, 0, sizeof(WIDGET_ARC));
 
-    Arc->width = 0;
-    Arc->height = 0;
+    Arc->width = 60;
+    Arc->height = 40;
     Arc->min = 0.0;
     Arc->max = 100.0;
     Arc->value = 0.0;
@@ -85,9 +85,14 @@ int widget_arc_init(WIDGET * Self)
     property_load(section, "max", NULL, &Arc->expr_max);
     property_load(section, "update", "1000", &Arc->update);
 
+    cfg_number(section, "width", 60, 1, 500, &Arc->width);
+    cfg_number(section, "height", 40, 1, 300, &Arc->height);
     cfg_number(section, "ticks", 5, 1, 20, &Arc->num_major);
     cfg_number(section, "minor", 5, 0, 10, &Arc->num_minor);
     cfg_number(section, "thickness", 8, 2, 20, &Arc->thickness);
+
+    Self->x2 = Self->col + Arc->width;
+    Self->y2 = Self->row + Arc->height;
 
     style_str = cfg_get(section, "style", "semi");
     if (strcasecmp(style_str, "quarter") == 0) {

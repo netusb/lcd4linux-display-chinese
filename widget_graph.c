@@ -74,8 +74,8 @@ int widget_graph_init(WIDGET * Self)
     Graph = malloc(sizeof(WIDGET_GRAPH));
     memset(Graph, 0, sizeof(WIDGET_GRAPH));
 
-    Graph->width = 0;
-    Graph->height = 0;
+    Graph->width = 40;
+    Graph->height = 20;
     Graph->num_points = GRAPH_DEFAULT_POINTS;
     Graph->min = 0.0;
     Graph->max = 100.0;
@@ -89,8 +89,13 @@ int widget_graph_init(WIDGET * Self)
     property_load(section, "max", NULL, &Graph->expr_max);
     property_load(section, "update", "1000", &Graph->update);
 
+    cfg_number(section, "width", 40, 1, 500, &Graph->width);
+    cfg_number(section, "height", 20, 1, 300, &Graph->height);
     cfg_number(section, "points", GRAPH_DEFAULT_POINTS, 1, GRAPH_MAX_POINTS, &Graph->num_points);
     cfg_number(section, "style", 0, 0, 2, &Graph->style);
+
+    Self->x2 = Self->col + Graph->width;
+    Self->y2 = Self->row + Graph->height;
 
     if (!property_valid(&Graph->expression)) {
 	error("Warning: widget %s has no expression", section);
