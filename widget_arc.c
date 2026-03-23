@@ -175,7 +175,7 @@ int widget_arc_quit(WIDGET * Self)
 
 WIDGET_CLASS Widget_Arc = {
     .name = "arc",
-    .type = WIDGET_TYPE_XY,
+    .type = WIDGET_TYPE_RC,
     .init = widget_arc_init,
     .draw = NULL,
     .quit = widget_arc_quit,

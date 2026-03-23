@@ -629,9 +629,10 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
     WIDGET_GRAPH *Graph = W->data;
     RGBA line_color, fill_color, bg_color, grid_color;
     int layer, row, col, width, height;
-    int x, y, i, px, py, prev_x, prev_y;
+    int x, y, i;
     double value, normalized;
     int points_to_draw, step;
+    int px, py, last_py, last_px;
 
     layer = W->layer;
     row = W->row;
@@ -639,18 +640,29 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
     width = Graph->width;
     height = Graph->height;
 
+    info("GRAPH draw called: row=%d col=%d w=%d h=%d data_count=%d", row, col, width, height, Graph->data_count);
+
+    if (W->class->type == WIDGET_TYPE_RC) {
+	row = row * YRES;
+	col = col * XRES;
+	width = width * XRES;
+	height = height * YRES;
+    }
+
+    info("GRAPH after RC: row=%d col=%d w=%d h=%d", row, col, width, height);
+
     /* sanity check */
     if (layer < 0 || layer >= LAYERS) {
 	error("%s: layer %d out of bounds (0..%d)", Driver, layer, LAYERS - 1);
 	return -1;
     }
 
-    /* if no size, do nothing */
     if (width <= 0 || height <= 0) {
+	info("GRAPH: width or height is 0");
 	return 0;
     }
 
-    /* maybe grow layout framebuffer */
+    /* grow framebuffer if needed */
     drv_generic_graphic_resizeFB(row + height, col + width);
 
     /* get colors */
@@ -659,89 +671,45 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
     bg_color = Graph->bg_color;
     grid_color = Graph->grid_color;
 
-    /* clear background */
+    info("GRAPH colors: R=%d G=%d B=%d", line_color.R, line_color.G, line_color.B);
+
+    /* clear background - fill with bg_color */
     for (y = 0; y < height; y++) {
 	for (x = 0; x < width; x++) {
-	    int i = (row + y) * LCOLS + col + x;
-	    drv_generic_graphic_FB[layer][i] = bg_color;
+	    drv_generic_graphic_FB[layer][(row + y) * LCOLS + col + x] = bg_color;
 	}
     }
 
-    /* draw grid lines */
-    for (i = 1; i < 4; i++) {
-	int gy = (height * i) / 4;
-	for (x = 0; x < width; x++) {
-	    int idx = (row + gy) * LCOLS + col + x;
-	    drv_generic_graphic_FB[layer][idx] = grid_color;
-	}
+    info("GRAPH: background drawn");
+
+    /* draw grid - configurable number of horizontal lines */
+    if (Graph->grid_lines > 0) {
+        for (i = 1; i <= Graph->grid_lines; i++) {
+            int gy = (height * i) / (Graph->grid_lines + 1);
+            for (x = 0; x < width; x++) {
+                drv_generic_graphic_FB[layer][(row + gy) * LCOLS + col + x] = grid_color;
+            }
+        }
     }
 
-    /* draw graph line */
+    /* draw graph line - smooth connected line */
     if (Graph->data_count > 1) {
 	points_to_draw = (Graph->data_count < Graph->num_points) ? 
 			Graph->data_count : Graph->num_points;
-	step = width / points_to_draw;
-	if (step < 1) step = 1;
+	
+	if (points_to_draw > 1) {
+	    step = width / points_to_draw;
+	    if (step < 1) step = 1;
 
-	prev_x = -1;
-	prev_y = -1;
+	    last_py = -1;
+	    last_px = -1;
 
-	for (i = 0; i < points_to_draw; i++) {
-	    int idx = (Graph->data_head - points_to_draw + i + Graph->num_points) % Graph->num_points;
-	    double val = Graph->data[idx];
-	    
-	    /* normalize value to 0-1 range */
-	    if (Graph->max != Graph->min)
-		normalized = (val - Graph->min) / (Graph->max - Graph->min);
-	    else
-		normalized = 0;
-	    
-	    if (normalized < 0) normalized = 0;
-	    if (normalized > 1) normalized = 1;
-
-	    px = col + i * step;
-	    py = row + height - 1 - (int)(normalized * (height - 1));
-
-	    if (prev_x >= 0) {
-		/* draw line segment using Bresenham's algorithm */
-		int dx = abs(px - prev_x);
-		int dy = abs(py - prev_y);
-		int sx = prev_x < px ? 1 : -1;
-		int sy = prev_y < py ? 1 : -1;
-		int err = dx - dy;
-		int e2;
-
-		while (1) {
-		    int ix = prev_x - col;
-		    int iy = prev_y - row;
-		    if (ix >= 0 && ix < width && iy >= 0 && iy < height) {
-			int idx = (row + iy) * LCOLS + col + ix;
-			drv_generic_graphic_FB[layer][idx] = line_color;
-		    }
-
-		    if (prev_x == px && prev_y == py) break;
-		    e2 = 2 * err;
-		    if (e2 > -dy) {
-			err -= dy;
-			prev_x += sx;
-		    }
-		    if (e2 < dx) {
-			err += dx;
-			prev_y += sy;
-		    }
-		}
-	    }
-
-	    prev_x = px;
-	    prev_y = py;
-	}
-
-	/* fill area below line if style is area */
-	if (Graph->style == 1) {
+	    /* draw smooth line connecting all points */
 	    for (i = 0; i < points_to_draw; i++) {
-		int idx = (Graph->data_head - points_to_draw + i + Graph->num_points) % Graph->num_points;
-		double val = Graph->data[idx];
+		int data_idx = (Graph->data_head - points_to_draw + i + Graph->num_points) % Graph->num_points;
+		double val = Graph->data[data_idx];
 		
+		/* normalize value to 0-1 range */
 		if (Graph->max != Graph->min)
 		    normalized = (val - Graph->min) / (Graph->max - Graph->min);
 		else
@@ -750,24 +718,95 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
 		if (normalized < 0) normalized = 0;
 		if (normalized > 1) normalized = 1;
 
-		px = col + i * step;
+		px = col + (i * step);
 		py = row + height - 1 - (int)(normalized * (height - 1));
-		
-		/* draw vertical line to bottom */
-		for (y = py; y < row + height; y++) {
-		    if (px >= col && px < col + width && y >= row && y < row + height) {
-			int idx = y * LCOLS + px;
-			drv_generic_graphic_FB[layer][idx] = fill_color;
+
+		/* clamp to valid range */
+		if (px < col) px = col;
+		if (px >= col + width) px = col + width - 1;
+		if (py < row) py = row;
+		if (py >= row + height) py = row + height - 1;
+
+		/* draw line from last point to this point */
+		if (last_py >= 0 && last_px >= 0) {
+		    int dx = abs(px - last_px);
+		    int dy = abs(py - last_py);
+		    int sx = last_px < px ? 1 : -1;
+		    int sy = last_py < py ? 1 : -1;
+		    int err = dx - dy;
+		    int cx = last_px;
+		    int cy = last_py;
+		    
+		    while (1) {
+			if (cx >= col && cx < col + width && cy >= row && cy < row + height) {
+			    drv_generic_graphic_FB[layer][cy * LCOLS + cx] = line_color;
+			}
+			if (cx == px && cy == py) break;
+			int e2 = 2 * err;
+			if (e2 > -dy) { err -= dy; cx += sx; }
+			if (e2 < dx) { err += dx; cy += sy; }
 		    }
 		}
+
+		last_px = px;
+		last_py = py;
 	    }
 	}
     }
 
-    /* flush area */
-    drv_generic_graphic_blit(row, col, height, width);
-    return 0;
+    /* show current value as text */
+    if (Graph->show_value && Graph->data_count > 0) {
+        int last_idx = (Graph->data_head - 1 + Graph->num_points) % Graph->num_points;
+        double display_val = Graph->data[last_idx];
+        double display_max = Graph->max;
+        
+        /* calculate percentage if max > 0 */
+        if (display_max > 0) {
+            int pct = (int)(100 * display_val / display_max);
+            char text[8];
+            snprintf(text, sizeof(text), "%d%%", pct);
+            
+            /* draw simple text representation */
+            int text_x = col + width - 25;
+            int text_y = row + 2;
+            int char_w = 4;
+            int char_h = 6;
+            
+            /* draw text background */
+            for (y = text_y; y < text_y + char_h && y < row + height; y++) {
+                for (x = text_x; x < text_x + char_w * 3 && x < col + width; x++) {
+                    if (y >= row && y < row + height && x >= col && x < col + width) {
+                        drv_generic_graphic_FB[layer][y * LCOLS + x] = bg_color;
+                    }
+                }
+            }
+            
+            /* draw simple digits */
+            int digit_x = text_x + 2;
+            const char *p = text;
+            while (*p && digit_x < col + width - 2) {
+                int digit = *p - '0';
+                if (*p == '%') digit = 10;
+                if (*p >= '0' && *p <= '9') {
+                    for (int dy = 0; dy < 5 && text_y + dy < row + height; dy++) {
+                        for (int dx = 0; dx < 3 && digit_x + dx < col + width; dx++) {
+                            if (digit_x + dx >= col && digit_x + dx < col + width && 
+                                text_y + dy >= row && text_y + dy < row + height) {
+                                drv_generic_graphic_FB[layer][(text_y + dy) * LCOLS + (digit_x + dx)] = line_color;
+                            }
+                        }
+                    }
+                    digit_x += 4;
+                }
+                p++;
+            }
+        }
+    }
 
+    /* flush area to display */
+    drv_generic_graphic_blit(row, col, height, width);
+    info("GRAPH draw complete: blit called for row=%d col=%d h=%d w=%d", row, col, height, width);
+    return 0;
 }
 
 
@@ -877,6 +916,13 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     col = W->col;
     width = Arc->width;
     height = Arc->height;
+
+    if (W->class->type == WIDGET_TYPE_RC) {
+	row = row * YRES;
+	col = col * XRES;
+	width = width * XRES;
+	height = height * YRES;
+    }
 
     /* sanity check */
     if (layer < 0 || layer >= LAYERS) {

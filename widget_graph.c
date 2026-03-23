@@ -29,32 +29,33 @@ void widget_graph_update(void *Self)
 {
     WIDGET *W = (WIDGET *) Self;
     WIDGET_GRAPH *Graph = W->data;
-
     double value;
+    int update_ms;
 
+    /* evaluate update property first */
+    property_eval(&Graph->update);
+    update_ms = (int)P2N(&Graph->update);
+    
+    /* then evaluate expression */
     property_eval(&Graph->expression);
     value = P2N(&Graph->expression);
 
-    if (property_valid(&Graph->expr_min)) {
-	property_eval(&Graph->expr_min);
-	Graph->min = P2N(&Graph->expr_min);
-    }
+    info("GRAPH update: value=%.2f count=%d update=%d", value, Graph->data_count, update_ms);
 
-    if (property_valid(&Graph->expr_max)) {
-	property_eval(&Graph->expr_max);
-	Graph->max = P2N(&Graph->expr_max);
-    }
-
+    /* store data in circular buffer */
     Graph->data[Graph->data_head] = value;
     Graph->data_head = (Graph->data_head + 1) % Graph->num_points;
     if (Graph->data_count < Graph->num_points)
 	Graph->data_count++;
 
+    /* trigger redraw */
     if (W->class->draw)
 	W->class->draw(W);
 
-    if (P2N(&Graph->update) > 0) {
-	timer_add_widget(widget_graph_update, Self, P2N(&Graph->update), 1);
+    /* reschedule timer */
+    info("GRAPH update: reschedule timer for %d ms", update_ms);
+    if (update_ms > 0) {
+	timer_add_widget(widget_graph_update, Self, update_ms, 1);
     }
 }
 
@@ -80,6 +81,8 @@ int widget_graph_init(WIDGET * Self)
     Graph->min = 0.0;
     Graph->max = 100.0;
     Graph->style = 0;
+    Graph->grid_lines = 3;
+    Graph->show_value = 1;
     Graph->data = NULL;
     Graph->data_head = 0;
     Graph->data_count = 0;
@@ -93,6 +96,8 @@ int widget_graph_init(WIDGET * Self)
     cfg_number(section, "height", 20, 1, 300, &Graph->height);
     cfg_number(section, "points", GRAPH_DEFAULT_POINTS, 1, GRAPH_MAX_POINTS, &Graph->num_points);
     cfg_number(section, "style", 0, 0, 2, &Graph->style);
+    cfg_number(section, "grid", 3, 0, 10, &Graph->grid_lines);
+    cfg_number(section, "value", 1, 0, 1, &Graph->show_value);
 
     Self->x2 = Self->col + Graph->width;
     Self->y2 = Self->row + Graph->height;
@@ -104,30 +109,61 @@ int widget_graph_init(WIDGET * Self)
     Graph->data = malloc(Graph->num_points * sizeof(double));
     memset(Graph->data, 0, Graph->num_points * sizeof(double));
 
+    /* default colors - bright green on dark background */
     Graph->line_color.R = 0;
     Graph->line_color.G = 255;
     Graph->line_color.B = 0;
     Graph->line_color.A = 255;
 
-    Graph->fill_color.R = 0;
-    Graph->fill_color.G = 128;
+    Graph->fill_color.R = 255;
+    Graph->fill_color.G = 200;
     Graph->fill_color.B = 0;
-    Graph->fill_color.A = 128;
+    Graph->fill_color.A = 200;
 
-    Graph->bg_color.R = 0;
-    Graph->bg_color.G = 0;
-    Graph->bg_color.B = 0;
+    Graph->bg_color.R = 10;
+    Graph->bg_color.G = 10;
+    Graph->bg_color.B = 10;
     Graph->bg_color.A = 255;
 
-    Graph->grid_color.R = 64;
-    Graph->grid_color.G = 64;
-    Graph->grid_color.B = 64;
+    Graph->grid_color.R = 40;
+    Graph->grid_color.G = 40;
+    Graph->grid_color.B = 40;
     Graph->grid_color.A = 255;
 
-    widget_color(section, Self->name, "color", &Graph->line_color);
-    widget_color(section, Self->name, "fill", &Graph->fill_color);
-    widget_color(section, Self->name, "bg", &Graph->bg_color);
-    widget_color(section, Self->name, "grid", &Graph->grid_color);
+    /* try to override with config colors, but keep defaults if not set */
+    {
+        char *color;
+        RGBA c;
+        color = cfg_get(section, "color", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) {
+            Graph->line_color = c;
+        }
+        if (color) free(color);
+        
+        color = cfg_get(section, "fill", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) {
+            Graph->fill_color = c;
+        }
+        if (color) free(color);
+        
+        color = cfg_get(section, "bg", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) {
+            Graph->bg_color = c;
+        }
+        if (color) free(color);
+        
+        color = cfg_get(section, "grid", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) {
+            Graph->grid_color = c;
+        }
+        if (color) free(color);
+    }
+
+    /* ensure alpha is 255 for visibility */
+    Graph->line_color.A = 255;
+    Graph->fill_color.A = 180;
+    Graph->bg_color.A = 255;
+    Graph->grid_color.A = 255;
 
     free(section);
     Self->data = Graph;
@@ -162,7 +198,7 @@ int widget_graph_quit(WIDGET * Self)
 
 WIDGET_CLASS Widget_Graph = {
     .name = "graph",
-    .type = WIDGET_TYPE_XY,
+    .type = WIDGET_TYPE_RC,
     .init = widget_graph_init,
     .draw = NULL,
     .quit = widget_graph_quit,
