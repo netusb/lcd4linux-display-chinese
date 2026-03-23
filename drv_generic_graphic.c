@@ -1026,17 +1026,10 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
         minor_tick_color.A = 255;
         
         for (i = 1; i < total_minor; i++) {  /* skip i=0 (major tick position) */
+            /* skip positions that coincide with major ticks (multiples of ticks_per_interval) */
+            if (i % ticks_per_interval == 0) continue;
+            
             tick_angle = Arc->start_angle - (range * i) / ticks_per_interval;
-            /* skip positions that coincide with major ticks */
-            int skip = 0;
-            int j;
-            for (j = 1; j <= ticks_per_interval; j++) {
-                if (i == j * intervals) {
-                    skip = 1;
-                    break;
-                }
-            }
-            if (skip) continue;
             
             if (tick_angle < 0) tick_angle += 360;
             double rad = tick_angle * M_PI / 180.0;
