@@ -29,7 +29,13 @@ void widget_arc_update(void *Self)
 {
     WIDGET *W = (WIDGET *) Self;
     WIDGET_ARC *Arc = W->data;
+    int update_ms;
 
+    /* evaluate update property first */
+    property_eval(&Arc->update);
+    update_ms = (int)P2N(&Arc->update);
+
+    /* then evaluate expression */
     property_eval(&Arc->expression);
     Arc->value = P2N(&Arc->expression);
 
@@ -46,8 +52,8 @@ void widget_arc_update(void *Self)
     if (W->class->draw)
 	W->class->draw(W);
 
-    if (P2N(&Arc->update) > 0) {
-	timer_add_widget(widget_arc_update, Self, P2N(&Arc->update), 1);
+    if (update_ms > 0) {
+	timer_add_widget(widget_arc_update, Self, update_ms, 1);
     }
 }
 
@@ -91,22 +97,24 @@ int widget_arc_init(WIDGET * Self)
     cfg_number(section, "minor", 5, 0, 10, &Arc->num_minor);
     cfg_number(section, "thickness", 8, 2, 20, &Arc->thickness);
 
+    info("ARC init: name=%s ticks=%d minor=%d thickness=%d", Self->name, Arc->num_major, Arc->num_minor, Arc->thickness);
+
     Self->x2 = Self->col + Arc->width;
     Self->y2 = Self->row + Arc->height;
 
     style_str = cfg_get(section, "style", "semi");
     if (strcasecmp(style_str, "quarter") == 0) {
 	Arc->style = ARC_STYLE_QUARTER;
-	Arc->start_angle = 90.0;
-	Arc->end_angle = 0.0;
+	Arc->start_angle = 180.0;
+	Arc->end_angle = 270.0;
     } else if (strcasecmp(style_str, "full") == 0) {
 	Arc->style = ARC_STYLE_FULL;
 	Arc->start_angle = 0.0;
 	Arc->end_angle = 360.0;
     } else {
 	Arc->style = ARC_STYLE_SEMI;
-	Arc->start_angle = 135.0;
-	Arc->end_angle = 45.0;
+	Arc->start_angle = 180.0;
+	Arc->end_angle = 0.0;
     }
     free(style_str);
 
@@ -114,6 +122,7 @@ int widget_arc_init(WIDGET * Self)
 	error("Warning: widget %s has no expression", section);
     }
 
+    /* default colors - bright red needle on dark background */
     Arc->arc_color.R = 64;
     Arc->arc_color.G = 64;
     Arc->arc_color.B = 64;
@@ -124,9 +133,9 @@ int widget_arc_init(WIDGET * Self)
     Arc->needle_color.B = 0;
     Arc->needle_color.A = 255;
 
-    Arc->center_color.R = 128;
-    Arc->center_color.G = 128;
-    Arc->center_color.B = 128;
+    Arc->center_color.R = 200;
+    Arc->center_color.G = 200;
+    Arc->center_color.B = 200;
     Arc->center_color.A = 255;
 
     Arc->text_color.R = 255;
@@ -134,15 +143,37 @@ int widget_arc_init(WIDGET * Self)
     Arc->text_color.B = 255;
     Arc->text_color.A = 255;
 
-    Arc->bg_color.R = 0;
-    Arc->bg_color.G = 0;
-    Arc->bg_color.B = 0;
+    Arc->bg_color.R = 20;
+    Arc->bg_color.G = 20;
+    Arc->bg_color.B = 20;
     Arc->bg_color.A = 255;
 
-    widget_color(section, Self->name, "arc", &Arc->arc_color);
-    widget_color(section, Self->name, "needle", &Arc->needle_color);
-    widget_color(section, Self->name, "center", &Arc->center_color);
-    widget_color(section, Self->name, "bg", &Arc->bg_color);
+    /* try to override with config colors */
+    {
+        char *color;
+        RGBA c;
+        color = cfg_get(section, "arc", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) Arc->arc_color = c;
+        if (color) free(color);
+        
+        color = cfg_get(section, "needle", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) Arc->needle_color = c;
+        if (color) free(color);
+        
+        color = cfg_get(section, "center", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) Arc->center_color = c;
+        if (color) free(color);
+        
+        color = cfg_get(section, "bg", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) Arc->bg_color = c;
+        if (color) free(color);
+    }
+
+    /* ensure alpha is 255 */
+    Arc->arc_color.A = 255;
+    Arc->needle_color.A = 255;
+    Arc->center_color.A = 255;
+    Arc->bg_color.A = 255;
 
     free(section);
     Self->data = Arc;
