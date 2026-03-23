@@ -48,6 +48,8 @@ widget_icon.c widget_icon.h   \
 widget_keypad.c widget_keypad.h \
 widget_timer.c widget_timer.h \
 widget_gpo.c  widget_gpo.h    \
+widget_graph.c widget_graph.h \
+widget_arc.c   widget_arc.h   \
 font_ttf.c    font_ttf.h     \
                               \
 plugin.c      plugin.h        \

@@ -55,6 +55,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 #include <unistd.h>
 #include <termios.h>
 #include <fcntl.h>
@@ -69,6 +70,8 @@
 #include "widget_icon.h"
 #include "widget_bar.h"
 #include "widget_image.h"
+#include "widget_graph.h"
+#include "widget_arc.h"
 #include "rgb.h"
 #include "drv.h"
 #include "drv_generic.h"
@@ -618,6 +621,383 @@ int drv_generic_graphic_image_draw(WIDGET * W)
 
 
 /****************************************/
+/*** generic graph handling            ***/
+/****************************************/
+
+int drv_generic_graphic_graph_draw(WIDGET * W)
+{
+    WIDGET_GRAPH *Graph = W->data;
+    RGBA line_color, fill_color, bg_color, grid_color;
+    int layer, row, col, width, height;
+    int x, y, i, px, py, prev_x, prev_y;
+    double value, normalized;
+    int points_to_draw, step;
+
+    layer = W->layer;
+    row = W->row;
+    col = W->col;
+    width = Graph->width;
+    height = Graph->height;
+
+    /* sanity check */
+    if (layer < 0 || layer >= LAYERS) {
+	error("%s: layer %d out of bounds (0..%d)", Driver, layer, LAYERS - 1);
+	return -1;
+    }
+
+    /* if no size, do nothing */
+    if (width <= 0 || height <= 0) {
+	return 0;
+    }
+
+    /* maybe grow layout framebuffer */
+    drv_generic_graphic_resizeFB(row + height, col + width);
+
+    /* get colors */
+    line_color = Graph->line_color;
+    fill_color = Graph->fill_color;
+    bg_color = Graph->bg_color;
+    grid_color = Graph->grid_color;
+
+    /* clear background */
+    for (y = 0; y < height; y++) {
+	for (x = 0; x < width; x++) {
+	    int i = (row + y) * LCOLS + col + x;
+	    drv_generic_graphic_FB[layer][i] = bg_color;
+	}
+    }
+
+    /* draw grid lines */
+    for (i = 1; i < 4; i++) {
+	int gy = (height * i) / 4;
+	for (x = 0; x < width; x++) {
+	    int idx = (row + gy) * LCOLS + col + x;
+	    drv_generic_graphic_FB[layer][idx] = grid_color;
+	}
+    }
+
+    /* draw graph line */
+    if (Graph->data_count > 1) {
+	points_to_draw = (Graph->data_count < Graph->num_points) ? 
+			Graph->data_count : Graph->num_points;
+	step = width / points_to_draw;
+	if (step < 1) step = 1;
+
+	prev_x = -1;
+	prev_y = -1;
+
+	for (i = 0; i < points_to_draw; i++) {
+	    int idx = (Graph->data_head - points_to_draw + i + Graph->num_points) % Graph->num_points;
+	    double val = Graph->data[idx];
+	    
+	    /* normalize value to 0-1 range */
+	    if (Graph->max != Graph->min)
+		normalized = (val - Graph->min) / (Graph->max - Graph->min);
+	    else
+		normalized = 0;
+	    
+	    if (normalized < 0) normalized = 0;
+	    if (normalized > 1) normalized = 1;
+
+	    px = col + i * step;
+	    py = row + height - 1 - (int)(normalized * (height - 1));
+
+	    if (prev_x >= 0) {
+		/* draw line segment using Bresenham's algorithm */
+		int dx = abs(px - prev_x);
+		int dy = abs(py - prev_y);
+		int sx = prev_x < px ? 1 : -1;
+		int sy = prev_y < py ? 1 : -1;
+		int err = dx - dy;
+		int e2;
+
+		while (1) {
+		    int ix = prev_x - col;
+		    int iy = prev_y - row;
+		    if (ix >= 0 && ix < width && iy >= 0 && iy < height) {
+			int idx = (row + iy) * LCOLS + col + ix;
+			drv_generic_graphic_FB[layer][idx] = line_color;
+		    }
+
+		    if (prev_x == px && prev_y == py) break;
+		    e2 = 2 * err;
+		    if (e2 > -dy) {
+			err -= dy;
+			prev_x += sx;
+		    }
+		    if (e2 < dx) {
+			err += dx;
+			prev_y += sy;
+		    }
+		}
+	    }
+
+	    prev_x = px;
+	    prev_y = py;
+	}
+
+	/* fill area below line if style is area */
+	if (Graph->style == 1) {
+	    for (i = 0; i < points_to_draw; i++) {
+		int idx = (Graph->data_head - points_to_draw + i + Graph->num_points) % Graph->num_points;
+		double val = Graph->data[idx];
+		
+		if (Graph->max != Graph->min)
+		    normalized = (val - Graph->min) / (Graph->max - Graph->min);
+		else
+		    normalized = 0;
+		
+		if (normalized < 0) normalized = 0;
+		if (normalized > 1) normalized = 1;
+
+		px = col + i * step;
+		py = row + height - 1 - (int)(normalized * (height - 1));
+		
+		/* draw vertical line to bottom */
+		for (y = py; y < row + height; y++) {
+		    if (px >= col && px < col + width && y >= row && y < row + height) {
+			int idx = y * LCOLS + px;
+			drv_generic_graphic_FB[layer][idx] = fill_color;
+		    }
+		}
+	    }
+	}
+    }
+
+    /* flush area */
+    drv_generic_graphic_blit(row, col, height, width);
+    return 0;
+
+}
+
+
+/****************************************/
+/*** generic arc handling               ***/
+/****************************************/
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+static void draw_arc_pixel(int layer, int cx, int cy, int x, int y, RGBA * color)
+{
+    int coords[8][2] = {
+	{x, y}, {-x, y}, {x, -y}, {-x, -y},
+	{y, x}, {-y, x}, {y, -x}, {-y, -x}
+    };
+    int i;
+    for (i = 0; i < 8; i++) {
+	int px = cx + coords[i][0];
+	int py = cy + coords[i][1];
+	if (px >= 0 && px < LCOLS && py >= 0 && py < LROWS) {
+	    int idx = py * LCOLS + px;
+	    drv_generic_graphic_FB[layer][idx] = *color;
+	}
+    }
+}
+
+static void draw_arc_segment(int layer, int cx, int cy, int radius, double start_deg, double end_deg, RGBA * color, int thickness)
+{
+    double angle;
+    double range = end_deg - start_deg;
+    if (range < 0) range += 360;
+    
+    for (angle = start_deg; angle < start_deg + range; angle += 0.5) {
+	double rad = angle * M_PI / 180.0;
+	int r;
+	for (r = radius - thickness + 1; r <= radius; r++) {
+	    int x = (int)(r * cos(rad));
+	    int y = (int)(r * sin(rad));
+	    draw_arc_pixel(layer, cx, cy, x, y, color);
+	}
+    }
+}
+
+static void draw_needle_line(int layer, int cx, int cy, int length, double angle, RGBA * color, int thickness)
+{
+    double rad = angle * M_PI / 180.0;
+    int x, y;
+    int i;
+
+    for (i = 0; i <= length; i++) {
+	x = cx + (int)(i * cos(rad));
+	y = cy - (int)(i * sin(rad));
+	
+	if (thickness > 1) {
+	    int j;
+	    for (j = 0; j < thickness; j++) {
+		int px = x + j - thickness/2;
+		int py = y;
+		if (px >= 0 && px < LCOLS && py >= 0 && py < LROWS) {
+		    int idx = py * LCOLS + px;
+		    drv_generic_graphic_FB[layer][idx] = *color;
+		}
+	    }
+	} else {
+	    if (x >= 0 && x < LCOLS && y >= 0 && y < LROWS) {
+		int idx = y * LCOLS + x;
+		drv_generic_graphic_FB[layer][idx] = *color;
+	    }
+	}
+    }
+}
+
+static void draw_center_circle(int layer, int cx, int cy, int radius, RGBA * color)
+{
+    int x, y;
+    int r2 = radius * radius;
+    
+    for (y = -radius; y <= radius; y++) {
+	for (x = -radius; x <= radius; x++) {
+	    if (x*x + y*y <= r2) {
+		int px = cx + x;
+		int py = cy + y;
+		if (px >= 0 && px < LCOLS && py >= 0 && py < LROWS) {
+		    int idx = py * LCOLS + px;
+		    drv_generic_graphic_FB[layer][idx] = *color;
+		}
+	    }
+	}
+    }
+}
+
+int drv_generic_graphic_arc_draw(WIDGET * W)
+{
+    WIDGET_ARC *Arc = W->data;
+    RGBA arc_color, needle_color, center_color, bg_color;
+    int layer, row, col, width, height;
+    int cx, cy, radius;
+    double value_angle, range;
+    int i;
+    double tick_angle;
+    RGBA tick_color;
+
+    layer = W->layer;
+    row = W->row;
+    col = W->col;
+    width = Arc->width;
+    height = Arc->height;
+
+    /* sanity check */
+    if (layer < 0 || layer >= LAYERS) {
+	error("%s: layer %d out of bounds (0..%d)", Driver, layer, LAYERS - 1);
+	return -1;
+    }
+
+    /* if no size, do nothing */
+    if (width <= 0 || height <= 0) {
+	return 0;
+    }
+
+    /* maybe grow layout framebuffer */
+    drv_generic_graphic_resizeFB(row + height, col + width);
+
+    /* get colors */
+    arc_color = Arc->arc_color;
+    needle_color = Arc->needle_color;
+    center_color = Arc->center_color;
+    bg_color = Arc->bg_color;
+
+    /* clear background */
+    for (i = 0; i < height; i++) {
+	int j;
+	for (j = 0; j < width; j++) {
+	    int idx = (row + i) * LCOLS + col + j;
+	    drv_generic_graphic_FB[layer][idx] = bg_color;
+	}
+    }
+
+    /* calculate center and radius */
+    cx = col + width / 2;
+    cy = row + height - 10;
+    radius = (width < height) ? (width / 2 - 10) : (height / 2 - 10);
+    if (radius < 10) radius = 10;
+
+    /* calculate value angle */
+    range = Arc->end_angle - Arc->start_angle;
+    if (range < 0) range += 360;
+    
+    if (Arc->max != Arc->min) {
+	double normalized = (Arc->value - Arc->min) / (Arc->max - Arc->min);
+	if (normalized < 0) normalized = 0;
+	if (normalized > 1) normalized = 1;
+	value_angle = Arc->start_angle + normalized * range;
+    } else {
+	value_angle = Arc->start_angle;
+    }
+
+    /* draw arc background */
+    draw_arc_segment(layer, cx, cy, radius, Arc->start_angle, Arc->end_angle, &arc_color, Arc->thickness);
+
+    /* draw tick marks */
+    tick_color = Arc->text_color;
+    
+    /* major ticks */
+    for (i = 0; i <= Arc->num_major; i++) {
+	tick_angle = Arc->start_angle + (range * i) / Arc->num_major;
+	double rad = tick_angle * M_PI / 180.0;
+	int inner = radius - Arc->thickness - 8;
+	int outer = radius - Arc->thickness - 2;
+	
+	int x1 = cx + (int)(inner * cos(rad));
+	int y1 = cy - (int)(inner * sin(rad));
+	int x2 = cx + (int)(outer * cos(rad));
+	int y2 = cy - (int)(outer * sin(rad));
+	
+	/* draw tick line */
+	int dx = abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+	int dy = abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+	int err = dx - dy;
+	int e2;
+
+	while (1) {
+	    if (x1 >= 0 && x1 < LCOLS && y1 >= 0 && y1 < LROWS) {
+		int idx = y1 * LCOLS + x1;
+		drv_generic_graphic_FB[layer][idx] = tick_color;
+	    }
+	    if (x1 == x2 && y1 == y2) break;
+	    e2 = 2 * err;
+	    if (e2 > -dy) { err -= dy; x1 += sx; }
+	    if (e2 < dx) { err += dx; y1 += sy; }
+	}
+    }
+
+    /* draw value arc (filled portion) */
+    {
+	RGBA value_color;
+	value_color.R = 0;
+	value_color.G = 255;
+	value_color.B = 0;
+	value_color.A = 255;
+	
+	if (Arc->value > Arc->max * 0.8) {
+	    value_color.R = 255;
+	    value_color.G = 128;
+	    value_color.B = 0;
+	}
+	if (Arc->value > Arc->max * 0.95) {
+	    value_color.R = 255;
+	    value_color.G = 0;
+	    value_color.B = 0;
+	}
+	
+	draw_arc_segment(layer, cx, cy, radius - 2, Arc->start_angle, value_angle, &value_color, Arc->thickness - 2);
+    }
+
+    /* draw needle */
+    draw_needle_line(layer, cx, cy, radius - Arc->thickness - 5, value_angle, &needle_color, 2);
+
+    /* draw center circle */
+    draw_center_circle(layer, cx, cy, 6, &center_color);
+
+    /* flush area */
+    drv_generic_graphic_blit(row, col, height, width);
+
+    return 0;
+}
+
+
+/****************************************/
 /*** generic init/quit                ***/
 /****************************************/
 
@@ -696,6 +1076,16 @@ int drv_generic_graphic_init(const char *section, const char *driver)
     wc.draw = drv_generic_graphic_image_draw;
     widget_register(&wc);
 #endif
+
+    /* register graph widget */
+    wc = Widget_Graph;
+    wc.draw = drv_generic_graphic_graph_draw;
+    widget_register(&wc);
+
+    /* register arc widget */
+    wc = Widget_Arc;
+    wc.draw = drv_generic_graphic_arc_draw;
+    widget_register(&wc);
 
     /* clear framebuffer but do not blit to display */
     for (l = 0; l < LAYERS; l++)
