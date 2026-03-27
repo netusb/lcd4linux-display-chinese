@@ -319,6 +319,13 @@ int widget_text_init(WIDGET * Self)
     property_load(section, "expression", "", &Text->value);
     property_load(section, "postfix", NULL, &Text->postfix);
     property_load(section, "style", NULL, &Text->style);
+    property_load(section, "font", NULL, &Text->font);
+
+    /* custom font size, default 0 (use display default) */
+    cfg_number(section, "fontsize", 0, 0, 100, &(Text->fontsize));
+
+    /* text direction: 0=East, 1=West, 2=North, 3=South */
+    cfg_number(section, "textdir", 0, 0, 3, &(Text->text_direction));
 
     /* sanity checks */
     if (!property_valid(&Text->value)) {
@@ -429,6 +436,7 @@ int widget_text_quit(WIDGET * Self)
 	    property_free(&Text->value);
 	    property_free(&Text->postfix);
 	    property_free(&Text->style);
+	    property_free(&Text->font);
 	    free(Text->string);
 	    free(Text->buffer);
 	    free(Self->data);

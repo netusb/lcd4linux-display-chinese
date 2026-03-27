@@ -99,6 +99,14 @@ static RGBA *drv_generic_graphic_FB[LAYERS] = { NULL, };
 /* exported framebuffer for TrueType fonts */
 RGBA *drv_generic_graphic_FB_ptr = NULL;
 
+RGBA *drv_generic_graphic_get_FB(int layer)
+{
+    if (layer < 0 || layer >= LAYERS) {
+        return NULL;
+    }
+    return drv_generic_graphic_FB[layer];
+}
+
 /* inverted colors */
 static int INVERTED = 0;
 
@@ -259,8 +267,8 @@ static void drv_generic_graphic_render(const int layer, const int row, const int
         /* maybe grow layout framebuffer */
         drv_generic_graphic_resizeFB(row + th, col + tw * len);
         
-        /* render text using TrueType */
-        font_ttf_render(layer, col, row, fg, bg, txt, tw * len);
+        /* render text using TrueType (horizontal by default) */
+        font_ttf_render(layer, col, row, fg, bg, txt, tw * len, 0, th);
         
         /* flush area */
         drv_generic_graphic_blit(row, col, th, tw * len);
@@ -378,11 +386,64 @@ int drv_generic_graphic_draw(WIDGET * W)
 {
     WIDGET_TEXT *Text = W->data;
     RGBA fg, bg;
+    char *font_str;
 
     fg = W->fg_valid ? W->fg_color : FG_COL;
     bg = W->bg_valid ? W->bg_color : BG_COL;
 
-    drv_generic_graphic_render(W->layer, YRES * W->row, XRES * W->col, fg, bg, P2S(&Text->style), Text->buffer);
+    // Ensure background is opaque for proper framebuffer updates
+    bg.A = 255;
+    
+    font_str = P2S(&Text->font);
+    
+    fprintf(stderr, "DRAW: widget='%s' font_str='%s' fontsize=%d textdir=%d TTF=%d\n",
+            W->name, font_str ? font_str : "NULL", Text->fontsize, Text->text_direction, font_ttf_is_available());
+    
+    /* Use custom font or fontsize if TTF is available */
+    if (font_ttf_is_available() && ((font_str && *font_str != '\0') || Text->fontsize > 0)) {
+        char *use_font = (font_str && *font_str != '\0') ? font_str : NULL;
+        int fontsize = Text->fontsize > 0 ? Text->fontsize : 16;
+        
+        fprintf(stderr, "DRAW: using TTF use_font='%s' fontsize=%d\n", use_font ? use_font : "NULL", fontsize);
+        
+        if (use_font) {
+            font_ttf_switch(use_font, fontsize);
+        } else {
+            font_ttf_setsize(fontsize);
+        }
+        int tw = font_ttf_get_width();
+        int th = font_ttf_get_height();
+        int direction = Text->text_direction;
+        
+        fprintf(stderr, "DRAW: tw=%d th=%d direction=%d\n", tw, th, direction);
+        
+        /* Calculate pixel position based on row/col */
+        int pixel_x = XRES * W->col;
+        int pixel_y = YRES * W->row;
+        int widget_height = YRES;
+        
+        font_ttf_render(W->layer, pixel_x, pixel_y, fg, bg, Text->buffer, tw * strlen(Text->buffer), direction, widget_height);
+        
+        /* Blit to display - for vertical text, use full display height */
+        if (direction == 2 || direction == 3) {
+            /* Vertical text: blit full height from pixel_y to bottom */
+            int blit_height = LROWS - pixel_y;
+            if (blit_height > widget_height * 8) blit_height = widget_height * 8;
+            int blit_width = tw + 8;  /* Character width + spacing */
+            if (blit_width > LCOLS - pixel_x) blit_width = LCOLS - pixel_x;
+            drv_generic_graphic_blit(pixel_y, pixel_x, blit_height, blit_width);
+        } else {
+            /* Horizontal text */
+            drv_generic_graphic_blit(pixel_y, pixel_x, th, tw * strlen(Text->buffer));
+        }
+        
+        if (use_font) {
+            font_ttf_restore();
+        }
+    } else {
+        fprintf(stderr, "DRAW: using default render\n");
+        drv_generic_graphic_render(W->layer, YRES * W->row, XRES * W->col, fg, bg, P2S(&Text->style), Text->buffer);
+    }
 
     return 0;
 }

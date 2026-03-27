@@ -39,6 +39,7 @@ extern RGBA NO_COL;		/* no color (completely transparent) */
 
 /* exported framebuffer pointer for TrueType fonts */
 extern RGBA *drv_generic_graphic_FB_ptr;
+extern RGBA *drv_generic_graphic_get_FB(int layer);
 
 /* these functions must be implemented by the real driver */
 extern void (*drv_generic_graphic_real_blit) (const int row, const int col, const int height, const int width);

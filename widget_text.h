@@ -35,11 +35,14 @@ typedef enum { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT, ALIGN_MARQUEE, ALIGN_AUTOM
     ALIGN_PINGPONG_CENTER, ALIGN_PINGPONG_RIGHT
 } TEXT_ALIGN;
 
+typedef enum { TEXT_DIR_EAST = 0, TEXT_DIR_WEST = 1, TEXT_DIR_NORTH = 2, TEXT_DIR_SOUTH = 3 } TEXT_DIRECTION;
+
 typedef struct WIDGET_TEXT {
     PROPERTY prefix;		/* label on the left side */
     PROPERTY postfix;		/* label on the right side */
     PROPERTY value;		/* value of text widget */
     PROPERTY style;		/* text style (plain/bold/slant) */
+    PROPERTY font;		/* custom font for this widget */
     char *string;		/* formatted value */
     char *buffer;		/* string with 'width+1' bytes allocated  */
     int width;			/* field width */
@@ -50,6 +53,8 @@ typedef struct WIDGET_TEXT {
     int speed;			/* marquee scrolling speed */
     int direction;		/* pingpong direction, 0=right, 1=left */
     int delay;			/* pingpong scrolling, wait before switch direction */
+    int fontsize;		/* custom font size for this widget */
+    int text_direction;		/* text direction: 0=East, 1=West, 2=North, 3=South */
 } WIDGET_TEXT;
 
 
