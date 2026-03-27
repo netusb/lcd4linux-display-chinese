@@ -1,0 +1,2 @@
+# we build from upstream svn revisions, ignore watchfile.
+lcd4linux source: debian-watch-file-is-missing

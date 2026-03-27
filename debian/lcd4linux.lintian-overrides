@@ -1,0 +1,2 @@
+# lcd4linux requires 600 permissions on /etc/lcd4linux.conf
+lcd4linux: non-standard-file-perm etc/lcd4linux.conf 0600 != 0644

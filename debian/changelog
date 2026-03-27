@@ -1,0 +1,271 @@
+lcd4linux (0.11.0~svn1203-3build1) noble; urgency=high
+
+  * No change rebuild against libmpdclient2t64.
+
+ -- Julian Andres Klode <juliank@ubuntu.com>  Mon, 08 Apr 2024 16:59:52 +0200
+
+lcd4linux (0.11.0~svn1203-3) unstable; urgency=medium
+
+  * disable python bindings, closes: #936827
+
+ -- Reinhard Tartler <siretart@tauware.de>  Fri, 30 Aug 2019 07:49:27 -0400
+
+lcd4linux (0.11.0~svn1203-2) unstable; urgency=medium
+
+  * Build depend on ligbd-dev (Closes: #880772)
+  * This package is no longer maintainer in bzr
+  * use debhelper 10, and its automatic autoreconf invocation
+  * Bump Standards Version
+
+ -- Reinhard Tartler <siretart@tauware.de>  Tue, 21 Nov 2017 22:07:42 -0500
+
+lcd4linux (0.11.0~svn1203-1) unstable; urgency=medium
+
+  * New upstream snapshot
+  * d/control: replace BD on libmysqlclient-dev with
+    default-libmysqlclient-dev
+  * Add lintian override for non-standard-file-perm etc/lcd4linux.conf; this
+    is expected behaviour
+  * d/control: Change Vcs/Homepage links to https
+  * d/control: Bump Standards Version to 3.9.8
+    - No changes required
+  * d/rules: Add all build hardening options
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Sat, 17 Dec 2016 00:32:45 +0000
+
+lcd4linux (0.11.0~svn1200-3) unstable; urgency=medium
+
+  * ACK libtool-bin NMU
+    - Thanks to Matthias Klose!
+  * Install modified lcd4linux.sample.conf as dummy lcd4linux.conf file to
+    satisfy startup checks (Closes: 758057)
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Sat, 01 Nov 2014 20:16:22 +0000
+
+lcd4linux (0.11.0~svn1200-2.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Build-depend on libtool-bin. Closes: #761762.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 09 Oct 2014 10:38:13 +0000
+
+lcd4linux (0.11.0~svn1200-2) unstable; urgency=medium
+
+  * d/control: libgphoto2-2-dev is now a transitional package; switch to
+    libgphoto2-dev instead (Closes: #739351) 
+  * d/lcd4linux.8: update location of sample conf file in manpage (Closes:
+    #735938) 
+  * Update Standards Version to 3.9.5
+    - No changes required 
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Tue, 15 Apr 2014 00:29:36 +0100
+
+lcd4linux (0.11.0~svn1200-1) unstable; urgency=low
+
+  * New upstream snapshot
+  * Add systemd service file
+    - Add dh-systemd to Build-Depends
+  * Update Standards Version to 3.9.4
+    - No changes required
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Sat, 12 Oct 2013 00:38:01 +0100
+
+lcd4linux (0.11.0~svn1197-1) unstable; urgency=low
+
+  * New upstream snapshot
+    - Disabled raspi plugin unless explicitly enabled 
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Thu, 16 May 2013 00:30:58 +0100
+
+lcd4linux (0.11.0~svn1196-1) unstable; urgency=low
+
+  * New upstream snapshot
+  * debian/rules: Pass '--with-python' to configure script
+    - Actually enables python support (Closes: #702602)
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Mon, 06 May 2013 15:24:39 +0100
+
+lcd4linux (0.11.0~svn1189-1) unstable; urgency=low
+
+  * New upstream snapshot
+    - Adds Hex support to the evaluator
+    - Fixes -Wimplicit-function-declaration build warnings
+    - Fixes -Werror=format-security build errors
+    - Fixes plugin_file syslog flood if file does not exist
+  * d/rules: Add get-orig-source target
+  * Bump dh to v9
+  * Switch to dh-style debian/rules
+  * Add Build-Depends on libftdi-dev, libgphoto2-2-dev, libmpdclient-dev and
+    libvncserver-dev to enable new drivers
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Sat, 19 May 2012 15:10:03 +0100
+
+lcd4linux (0.11.0~svn1180-1) unstable; urgency=low
+
+  [ Jonathan McCrohan ]
+  * New upstream snapshot
+     - adds new DPF driver
+     - adds new TeakLCM driver
+     - adds new Futaba VFD driver
+     - adds new Samsung SPF driver 
+  * Update to S-V 3.9.3
+  * Rewrite init script to use lsb-base functions
+     - fixes issue where invoke-rc.d would return error status during
+       installation
+  * Lintian fixes
+     - spelling-error-in-manpage 
+     - copyright-refers-to-symlink-license
+     - init.d-script-does-not-implement-optional-option
+  * Add watchfile lintian override; Using upstream svn instead 
+
+  [ Reinhard Tartler ]
+  * Updated Vcs-Bzr location to the newly created lcd4linux packaging
+    team.
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sun, 18 Mar 2012 17:14:15 +0100
+
+lcd4linux (0.11.0~svn1165-1) unstable; urgency=low
+
+  * New upstream snapshot
+     - raw port I/O in generic_parport driver disabled. Fixes FTBFS 
+       issues on mipsel, powerpc, s390x and sparc.
+     - includes updates for D4D driver.
+     - fixes compilation warnings.
+  * debian/NEWS added to announce change in generic_parport driver
+  * Update libmysqlclient-dev virtual package in build-depends,
+    thanks to Clint Byrum (Closes: #652132)
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Tue, 27 Dec 2011 00:27:15 +0000
+
+lcd4linux (0.11.0~svn1158-1) unstable; urgency=low
+
+  * New upstream snapshot
+    - includes picoLCD driver, Closes: #538823
+    - includes Pertelian driver, Closes: #506121 
+  * Make lcd4linux linux specific (requested by kFreeBSD team)
+  * Add optional build targets build-indep and build-dep
+    (thanks to lintian for catching this)
+
+ -- Jonathan McCrohan <jmccrohan@gmail.com>  Sun, 28 Aug 2011 14:29:48 +0100
+
+lcd4linux (0.11.0~svn1143-1) unstable; urgency=low
+
+  * New upstream snapshot
+  * Bump standards version
+  * No longer compile against Python. Python 2.6 now links against libssl,
+    which is in conflicts with the package license GPL.
+  * No longer build the mpd module. Closes: #578226
+  * Bug fix: "script lcd4linux/init.d/lcd4linux missing dependency on
+    $syslog", thanks to Petter Reinholdtsen (Closes: #582825).
+  * add libdbus-1-dev to build depends
+  * new co-maintainer: Jonathan McCrohan <jmccrohan@gmail.com>
+  * add sqlite3-dev to build depends
+
+ -- Reinhard Tartler <siretart@tauware.de>  Fri, 29 Apr 2011 18:25:10 +0200
+
+lcd4linux (0.10.1~rc2-4) unstable; urgency=low
+
+  * avoid LOCALMODLIBS for CFLAGS, only causes FTBFS in python 2.6
+
+ -- Reinhard Tartler <siretart@tauware.de>  Tue, 16 Mar 2010 15:58:55 +0100
+
+lcd4linux (0.10.1~rc2-3) unstable; urgency=low
+
+  * Add $remote-fs dependencies to init script. Reported by lintian.
+  * update ac_python_devel.m4 from autoconf-archive package. This allows
+    to build with python2.6. Closes: #571493
+  * update config.guess && config.sub, Closes: #542077
+  * disable mpd plugin. According to bugreports, it makes lcd4linux
+    unusable for non-mpd users. Please consider co-maintaining the package
+    if you want to see it coming back. Closes: #500068, #499055
+  * bump debhelper compat level to 7
+  * bump standards version to 3.8.4.
+  * Allow user control over lcd4linux args, 
+    thanks to "Karl O. Pinc" <kop@meme.com> for the patch. Closes: #506370
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sun, 28 Feb 2010 22:11:24 +0100
+
+lcd4linux (0.10.1~rc2-2) unstable; urgency=medium
+
+  * Bugfix: "lcd4linux: FTBFS: undefined reference to `rdtscl'" Patch
+    taken from upstream svn. Thanks to Robert Buchholz and Michael Reinelt
+    (upstream) for reviewing the patch. Closes: #436332
+  * Urgency medium for RC bug
+  * bump to standards version 3.7.3 (no changes needed)
+  * add Vcs-Bzr and Homepage header.
+
+ -- Reinhard Tartler <siretart@tauware.de>  Thu, 10 Jan 2008 10:30:49 +0100
+
+lcd4linux (0.10.1~rc2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Reinhard Tartler <siretart@tauware.de>  Mon, 30 Apr 2007 09:34:59 +0200
+
+lcd4linux (0.10.1~rc1-1) unstable; urgency=low
+
+  * New upstream release
+  * new upstream tarball no longer contains a debian/ directory at all
+    (Closes: #385152)
+  * add LSB keyword section
+
+ -- Reinhard Tartler <siretart@tauware.de>  Thu,  5 Apr 2007 15:41:11 +0200
+
+lcd4linux (0.10.0+cvs20060825-1) unstable; urgency=medium
+
+  * New Maintainer! 
+  * Dropping old maintainer in agreement with nobse@debian.org. 
+    Thanks for your work so far, nobse!
+  * urgency medium because of release critical bugs
+  * Bump standards version to 3.7.2 (no changes needed)
+  * add build depends on libmpd-dev for mpd support
+  * new upstream snapshot
+  * drop dependency of ${misc:Depends}, not used anyway
+  * now supporting USB2LCD
+  * don't update config.{sub,guess} in clean target automatically
+  * new target ``update-config-sub-guess'' to update config.{sub,guess}
+  * Acking NMU, Thanks Steinar! (Closes: #374682)
+  * Bug fix: "FTBFS: undefined reference to many X functions", thanks to
+    Eric Dorland. The problem was in driver.m4 (Closes: #381606).
+  * Bug fix: "Please stop Build-Depending on automake", thanks to Eric
+    Dorland (Closes: #381812).
+  * Don't ship /etc/lcd4linux.conf anymore. Please install and customize 
+    it yourself using /usr/share/doc/lcd4linux.conf.sample as template
+  * Bug fix: "lcd4linux - FTBFS: uses ia32 assembler", thanks to Bastian
+    Blank. Fixed by adding #ifdefs to produce those asm statements on i386
+    and amd64 only. (Closes: #336017).
+  * Removing outdated NEWS, FAQ, README.KDE on upstream request.
+  * Install manpage for lcd4linux
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sun, 27 Aug 2006 17:16:46 +0200
+
+lcd4linux (0.10.0+cvs20051015-3.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Build-depend on libxt-dev, to make sure configure detects X; fixes FTBFS.
+    (Closes: #374682)
+
+ -- Steinar H. Gunderson <sesse@debian.org>  Thu,  6 Jul 2006 18:10:58 +0200
+
+lcd4linux (0.10.0+cvs20051015-3) unstable; urgency=low
+
+  * Use libgd2-noxpm-dev instead libgd2-xpm-dev in build-dependencies.
+    (closes: #335834)
+  * Built against libmysqlclient15-dev instead libmysqlclient14-dev.
+    (closes: #343770)
+
+ -- Norbert Tretkowski <nobse@debian.org>  Tue, 21 Feb 2006 22:42:57 +0100
+
+lcd4linux (0.10.0+cvs20051015-2) unstable; urgency=low
+
+  * Added libmysqlclient-dev, python-dev, libx11-dev, libncurses5-dev, libusb-dev
+    and libgd2-xpm-dev to build-dependencies.
+
+ -- Norbert Tretkowski <nobse@debian.org>  Mon, 24 Oct 2005 21:09:48 +0200
+
+lcd4linux (0.10.0+cvs20051015-1) unstable; urgency=low
+
+  * Initial release. (closes: #334114)
+
+ -- Norbert Tretkowski <nobse@debian.org>  Sun, 16 Oct 2005 20:20:42 +0200
+

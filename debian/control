@@ -1,0 +1,35 @@
+Source: lcd4linux
+Section: utils
+Priority: optional
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Reinhard Tartler <siretart@tauware.de>
+Uploaders: Jonathan McCrohan <jmccrohan@gmail.com>
+Build-Depends:
+ libtool-bin,
+ debhelper (>= 10),
+ libdbus-1-dev,
+ libftdi-dev,
+ libgd-dev,
+ libgphoto2-dev,
+ libmpdclient-dev,
+ default-libmysqlclient-dev,
+ libncurses5-dev,
+ libsqlite3-dev,
+ libusb-dev,
+ libvncserver-dev,
+ libx11-dev,
+ libxt-dev,
+Standards-Version: 4.1.1
+Homepage: https://ssl.bulix.org/projects/lcd4linux/
+
+Package: lcd4linux
+Architecture: linux-any
+Depends:
+ lsb-base,
+ ${misc:Depends},
+ ${shlibs:Depends}
+Description: Grabs information and displays it on an external lcd
+ Small program that grabs information from the kernel and some subsystems
+ and displays it on an external liquid crystal display.
+ .
+ See http://ssl.bulix.org/projects/lcd4linux/ for Documentation
