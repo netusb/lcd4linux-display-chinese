@@ -98,6 +98,8 @@ int widget_graph_init(WIDGET * Self)
     cfg_number(section, "style", 0, 0, 2, &Graph->style);
     cfg_number(section, "grid", 3, 0, 10, &Graph->grid_lines);
     cfg_number(section, "value", 1, 0, 1, &Graph->show_value);
+    cfg_number(section, "value_size", 10, 6, 24, &Graph->value_size);
+    cfg_number(section, "direction", 0, 0, 1, &Graph->direction);
 
     Self->x2 = Self->col + Graph->width;
     Self->y2 = Self->row + Graph->height;

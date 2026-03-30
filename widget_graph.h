@@ -37,6 +37,8 @@ typedef struct WIDGET_GRAPH {
     int style;
     int grid_lines;
     int show_value;
+    int value_size;        /* 数值文字大小（像素） */
+    int direction;         /* 折线方向：0=从左到右, 1=从右到左 */
 } WIDGET_GRAPH;
 
 

@@ -776,7 +776,14 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
 		if (normalized < 0) normalized = 0;
 		if (normalized > 1) normalized = 1;
 
-		px = col + (i * step);
+		/* 根据direction决定x坐标方向 */
+		if (Graph->direction == 0) {
+		    /* 从左到右（默认） */
+		    px = col + (i * step);
+		} else {
+		    /* 从右到左 */
+		    px = col + width - 1 - (i * step);
+		}
 		py = row + height - 1 - (int)(normalized * (height - 1));
 
 		/* clamp to valid range */
@@ -824,15 +831,18 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
             char text[8];
             snprintf(text, sizeof(text), "%d%%", pct);
             
+            /* use value_size for font dimensions */
+            int font_size = Graph->value_size;
+            int char_w = font_size / 2;      /* 字符宽度约为字体大小的一半 */
+            int char_h = font_size;          /* 字符高度等于字体大小 */
+            
             /* draw simple text representation */
-            int text_x = col + width - 25;
+            int text_x = col + width - char_w * 4;
             int text_y = row + 2;
-            int char_w = 4;
-            int char_h = 6;
             
             /* draw text background */
             for (y = text_y; y < text_y + char_h && y < row + height; y++) {
-                for (x = text_x; x < text_x + char_w * 3 && x < col + width; x++) {
+                for (x = text_x; x < text_x + char_w * 4 && x < col + width; x++) {
                     if (y >= row && y < row + height && x >= col && x < col + width) {
                         drv_generic_graphic_FB[layer][y * LCOLS + x] = bg_color;
                     }
@@ -842,19 +852,19 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
             /* draw simple digits */
             int digit_x = text_x + 2;
             const char *p = text;
-            while (*p && digit_x < col + width - 2) {
+            while (*p && digit_x < col + width - char_w) {
                 int digit = *p - '0';
                 if (*p == '%') digit = 10;
-                if (*p >= '0' && *p <= '9') {
-                    for (int dy = 0; dy < 5 && text_y + dy < row + height; dy++) {
-                        for (int dx = 0; dx < 3 && digit_x + dx < col + width; dx++) {
+                if (*p >= '0' && *p <= '9' || *p == '%') {
+                    for (int dy = 0; dy < font_size - 2 && text_y + dy < row + height; dy++) {
+                        for (int dx = 0; dx < font_size / 2 - 1 && digit_x + dx < col + width; dx++) {
                             if (digit_x + dx >= col && digit_x + dx < col + width && 
                                 text_y + dy >= row && text_y + dy < row + height) {
-                                drv_generic_graphic_FB[layer][(text_y + dy) * LCOLS + (digit_x + dx)] = line_color;
+                                drv_generic_graphic_FB[layer][(text_y + dy) * LCOLS + (digit_x + dx)] = Graph->text_color;
                             }
                         }
                     }
-                    digit_x += 4;
+                    digit_x += char_w;
                 }
                 p++;
             }
