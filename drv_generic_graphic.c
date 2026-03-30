@@ -1059,10 +1059,13 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     /* draw tick marks */
     tick_color = Arc->text_color;
     
-    /* major ticks */
-    for (i = 0; i <= Arc->num_major; i++) {
-	tick_angle = Arc->start_angle - (range * i) / Arc->num_major;
+    /* major ticks - draw num_major ticks evenly spaced */
+    for (i = 0; i < Arc->num_major; i++) {
+	/* evenly distribute ticks across the arc range */
+	tick_angle = Arc->start_angle - (range * i) / (Arc->num_major - 1);
 	if (tick_angle < 0) tick_angle += 360;
+	if (tick_angle > 360) tick_angle -= 360;
+	
 	double rad = tick_angle * M_PI / 180.0;
 	int inner = radius - Arc->thickness - 3;
 	int outer = radius + 2;
@@ -1088,42 +1091,45 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
 	}
     }
 
-    /* minor ticks */
+    /* minor ticks - num_minor is ticks per major interval */
     if (Arc->num_minor > 0) {
-        int total_minor = Arc->num_major * Arc->num_minor;
-        
         /* minor tick color */
         RGBA minor_tick_color = Arc->tick_color;
         
-        for (i = 1; i < total_minor; i++) {
-            /* skip positions that coincide with major ticks */
-            if (i % Arc->num_minor == 0) continue;
+        /* for each major interval, draw num_minor ticks between major ticks */
+        for (int major_idx = 0; major_idx < Arc->num_major; major_idx++) {
+            double major_start = Arc->start_angle - (range * major_idx) / Arc->num_major;
+            double major_end = Arc->start_angle - (range * (major_idx + 1)) / Arc->num_major;
             
-            /* angle: divide by total_minor to spread evenly */
-            tick_angle = Arc->start_angle - (range * i) / total_minor;
-            
-            if (tick_angle < 0) tick_angle += 360;
-            double rad = tick_angle * M_PI / 180.0;
-            int inner = radius - Arc->thickness - 1;
-            int outer = radius + 3;  /* slightly longer for visibility */
-            
-            int x1 = cx + (int)(inner * cos(rad));
-            int y1 = cy - (int)(inner * sin(rad));
-            int x2 = cx + (int)(outer * cos(rad));
-            int y2 = cy - (int)(outer * sin(rad));
-            
-            /* draw small tick */
-            int dx = x2 - x1;
-            int dy = y2 - y1;
-            int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
-            if (steps < 1) steps = 1;
-            int k;
-            for (k = 0; k <= steps; k++) {
-                int px = x1 + (dx * k) / steps;
-                int py = y1 + (dy * k) / steps;
-                if (px >= col && px < col + width && py >= row && py < row + height) {
-                    int idx = py * LCOLS + px;
-                    drv_generic_graphic_FB[layer][idx] = minor_tick_color;
+            for (int minor_idx = 1; minor_idx <= Arc->num_minor; minor_idx++) {
+                /* calculate angle for this minor tick */
+                double fraction = (double)minor_idx / (Arc->num_minor + 1);
+                tick_angle = major_start - (major_start - major_end) * fraction;
+                
+                if (tick_angle < 0) tick_angle += 360;
+                if (tick_angle > 360) tick_angle -= 360;
+                
+                double rad = tick_angle * M_PI / 180.0;
+                int inner = radius - Arc->thickness - 1;
+                int outer = radius - Arc->thickness + 3;  /* short tick */
+                
+                int x1 = cx + (int)(inner * cos(rad));
+                int y1 = cy - (int)(inner * sin(rad));
+                int x2 = cx + (int)(outer * cos(rad));
+                int y2 = cy - (int)(outer * sin(rad));
+                
+                /* draw small tick */
+                int dx = x2 - x1;
+                int dy = y2 - y1;
+                int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
+                if (steps < 1) steps = 1;
+                for (int k = 0; k <= steps; k++) {
+                    int px = x1 + (dx * k) / steps;
+                    int py = y1 + (dy * k) / steps;
+                    if (px >= col && px < col + width && py >= row && py < row + height) {
+                        int idx = py * LCOLS + px;
+                        drv_generic_graphic_FB[layer][idx] = minor_tick_color;
+                    }
                 }
             }
         }

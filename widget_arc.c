@@ -93,30 +93,53 @@ int widget_arc_init(WIDGET * Self)
 
     cfg_number(section, "width", 60, 1, 500, &Arc->width);
     cfg_number(section, "height", 40, 1, 300, &Arc->height);
-    cfg_number(section, "ticks", 5, 1, 20, &Arc->num_major);
-    cfg_number(section, "minor", 5, 0, 10, &Arc->num_minor);
+    cfg_number(section, "num_major", 5, 1, 20, &Arc->num_major);
+    cfg_number(section, "num_minor", 5, 0, 10, &Arc->num_minor);
     cfg_number(section, "thickness", 8, 2, 20, &Arc->thickness);
+    cfg_number(section, "start_angle", -1, 0, 360, &Arc->start_angle);
+    cfg_number(section, "end_angle", -1, 0, 360, &Arc->end_angle);
 
     info("ARC init: name=%s ticks=%d minor=%d thickness=%d", Self->name, Arc->num_major, Arc->num_minor, Arc->thickness);
 
     Self->x2 = Self->col + Arc->width;
     Self->y2 = Self->row + Arc->height;
 
-    style_str = cfg_get(section, "style", "semi");
-    if (strcasecmp(style_str, "quarter") == 0) {
-	Arc->style = ARC_STYLE_QUARTER;
-	Arc->start_angle = 180.0;
-	Arc->end_angle = 270.0;
-    } else if (strcasecmp(style_str, "full") == 0) {
-	Arc->style = ARC_STYLE_FULL;
-	Arc->start_angle = 0.0;
-	Arc->end_angle = 360.0;
-    } else {
-	Arc->style = ARC_STYLE_SEMI;
-	Arc->start_angle = 180.0;
-	Arc->end_angle = 0.0;
+    /* parse style - support both numeric (0,1,2) and string (semi,quarter,full) */
+    {
+        int style_num = -1;
+        cfg_number(section, "style", -1, 0, 2, &style_num);
+        
+        if (style_num == 0) {
+            Arc->style = ARC_STYLE_SEMI;
+            if (Arc->start_angle < 0) Arc->start_angle = 180.0;
+            if (Arc->end_angle < 0) Arc->end_angle = 0.0;
+        } else if (style_num == 1) {
+            Arc->style = ARC_STYLE_QUARTER;
+            if (Arc->start_angle < 0) Arc->start_angle = 180.0;
+            if (Arc->end_angle < 0) Arc->end_angle = 270.0;
+        } else if (style_num == 2) {
+            Arc->style = ARC_STYLE_FULL;
+            if (Arc->start_angle < 0) Arc->start_angle = 0.0;
+            if (Arc->end_angle < 0) Arc->end_angle = 360.0;
+        } else {
+            /* try string style */
+            style_str = cfg_get(section, "style", "semi");
+            if (strcasecmp(style_str, "quarter") == 0) {
+                Arc->style = ARC_STYLE_QUARTER;
+                if (Arc->start_angle < 0) Arc->start_angle = 180.0;
+                if (Arc->end_angle < 0) Arc->end_angle = 270.0;
+            } else if (strcasecmp(style_str, "full") == 0) {
+                Arc->style = ARC_STYLE_FULL;
+                if (Arc->start_angle < 0) Arc->start_angle = 0.0;
+                if (Arc->end_angle < 0) Arc->end_angle = 360.0;
+            } else {
+                Arc->style = ARC_STYLE_SEMI;
+                if (Arc->start_angle < 0) Arc->start_angle = 180.0;
+                if (Arc->end_angle < 0) Arc->end_angle = 0.0;
+            }
+            free(style_str);
+        }
     }
-    free(style_str);
 
     if (!property_valid(&Arc->expression)) {
 	error("Warning: widget %s has no expression", section);
