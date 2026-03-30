@@ -157,33 +157,32 @@ int widget_arc_init(WIDGET * Self)
     {
         char *color;
         RGBA c;
-        color = cfg_get(section, "arc", NULL);
+        color = cfg_get(section, "arc_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) Arc->arc_color = c;
         if (color) free(color);
         
-        color = cfg_get(section, "needle", NULL);
+        color = cfg_get(section, "needle_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) Arc->needle_color = c;
         if (color) free(color);
         
-        color = cfg_get(section, "tick", NULL);
+        color = cfg_get(section, "tick_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) Arc->tick_color = c;
         if (color) free(color);
         
-        color = cfg_get(section, "center", NULL);
+        color = cfg_get(section, "center_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) Arc->center_color = c;
         if (color) free(color);
         
-        color = cfg_get(section, "bg", NULL);
+        color = cfg_get(section, "text_color", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) Arc->text_color = c;
+        if (color) free(color);
+        
+        color = cfg_get(section, "bg_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) Arc->bg_color = c;
         if (color) free(color);
     }
 
-    /* ensure alpha is 255 for other colors */
-    Arc->arc_color.A = 255;
-    Arc->needle_color.A = 255;
-    Arc->tick_color.A = 255;
-    Arc->center_color.A = 255;
-    /* bg_color.A is now read from config, don't force it */
+    /* respect config alpha values */
 
     free(section);
     Self->data = Arc;

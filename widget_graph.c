@@ -132,40 +132,47 @@ int widget_graph_init(WIDGET * Self)
     Graph->grid_color.B = 40;
     Graph->grid_color.A = 255;
 
+    Graph->text_color.R = 255;
+    Graph->text_color.G = 255;
+    Graph->text_color.B = 255;
+    Graph->text_color.A = 255;
+
     /* try to override with config colors, but keep defaults if not set */
     {
         char *color;
         RGBA c;
-        color = cfg_get(section, "color", NULL);
+        color = cfg_get(section, "line_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) {
             Graph->line_color = c;
         }
         if (color) free(color);
         
-        color = cfg_get(section, "fill", NULL);
+        color = cfg_get(section, "fill_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) {
             Graph->fill_color = c;
         }
         if (color) free(color);
         
-        color = cfg_get(section, "bg", NULL);
+        color = cfg_get(section, "bg_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) {
             Graph->bg_color = c;
         }
         if (color) free(color);
         
-        color = cfg_get(section, "grid", NULL);
+        color = cfg_get(section, "grid_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) {
             Graph->grid_color = c;
         }
         if (color) free(color);
+        
+        color = cfg_get(section, "text_color", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) {
+            Graph->text_color = c;
+        }
+        if (color) free(color);
     }
 
-    /* ensure alpha for visibility */
-    Graph->line_color.A = 255;
-    Graph->fill_color.A = 180;
-    /* bg_color.A is now read from config, don't force it */
-    Graph->grid_color.A = 255;
+    /* respect config alpha values */
 
     free(section);
     Self->data = Graph;
