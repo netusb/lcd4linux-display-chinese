@@ -151,7 +151,7 @@ int widget_arc_init(WIDGET * Self)
     Arc->bg_color.R = 20;
     Arc->bg_color.G = 20;
     Arc->bg_color.B = 20;
-    Arc->bg_color.A = 255;
+    Arc->bg_color.A = 0;  /* 默认透明，由配置文件控制 */
 
     /* try to override with config colors */
     {
@@ -178,12 +178,12 @@ int widget_arc_init(WIDGET * Self)
         if (color) free(color);
     }
 
-    /* ensure alpha is 255 */
+    /* ensure alpha is 255 for other colors */
     Arc->arc_color.A = 255;
     Arc->needle_color.A = 255;
     Arc->tick_color.A = 255;
     Arc->center_color.A = 255;
-    Arc->bg_color.A = 255;
+    /* bg_color.A is now read from config, don't force it */
 
     free(section);
     Self->data = Arc;

@@ -161,10 +161,10 @@ int widget_graph_init(WIDGET * Self)
         if (color) free(color);
     }
 
-    /* ensure alpha is 255 for visibility */
+    /* ensure alpha for visibility */
     Graph->line_color.A = 255;
     Graph->fill_color.A = 180;
-    Graph->bg_color.A = 255;
+    /* bg_color.A is now read from config, don't force it */
     Graph->grid_color.A = 255;
 
     free(section);
