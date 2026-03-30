@@ -213,16 +213,14 @@ static void render_text_horizontal(int layer, int x, int y, RGBA fg, RGBA bg, co
     
     if (max_descent < 0) max_descent = 0;
     
-    /* Clear the background area - use opaque version of bg color */
-    RGBA clear_bg = bg;
-    clear_bg.A = 255;  /* Force opaque for proper dirty rect update */
+    /* Clear the background area using configured bg color */
     for (int cy = 0; cy < ft_font_height; cy++) {
         for (int cx = 0; cx < total_width + 10; cx++) {
             int draw_x = x + cx;
             int draw_y = y + cy;
             if (draw_x >= 0 && draw_x < LCOLS && 
                 draw_y >= 0 && draw_y < LROWS) {
-                fb[draw_y * LCOLS + draw_x] = clear_bg;
+                fb[draw_y * LCOLS + draw_x] = bg;
             }
         }
     }
@@ -262,11 +260,16 @@ static void render_text_horizontal(int layer, int x, int y, RGBA fg, RGBA bg, co
         if (!error) {
             FT_GlyphSlot g = ft_face->glyph;
             
+            /* Calculate vertical center offset within widget height (YRES) */
+            int glyph_height = g->bitmap.rows;
+            int v_offset = (YRES - glyph_height) / 2;
+            if (v_offset < 0) v_offset = 0;
+            
             for (int by = 0; by < (int)g->bitmap.rows; by++) {
                 for (int bx = 0; bx < (int)g->bitmap.width; bx++) {
                     unsigned char pixel = g->bitmap.buffer[by * g->bitmap.width + bx];
                     int draw_x = pen_x + g->bitmap_left + bx;
-                    int draw_y = y + ft_font_height - g->bitmap_top + by - max_descent;
+                    int draw_y = y + v_offset + by;
                     
                     if (draw_x >= 0 && draw_x < LCOLS && 
                         draw_y >= 0 && draw_y < LROWS && pixel > 0) {
@@ -334,11 +337,16 @@ static void render_text_horizontal_right(int layer, int x, int y, RGBA fg, RGBA 
             
             pen_x -= g->advance.x / 64;
             
+            /* Calculate vertical center offset within widget height (YRES) */
+            int glyph_height = g->bitmap.rows;
+            int v_offset = (YRES - glyph_height) / 2;
+            if (v_offset < 0) v_offset = 0;
+            
             for (int by = 0; by < (int)g->bitmap.rows; by++) {
                 for (int bx = 0; bx < (int)g->bitmap.width; bx++) {
                     unsigned char pixel = g->bitmap.buffer[by * g->bitmap.width + bx];
                     int draw_x = pen_x + g->bitmap_left + bx;
-                    int draw_y = y + ft_font_height - g->bitmap_top + by;
+                    int draw_y = y + v_offset + by;
                     
                     if (draw_x >= 0 && draw_x < LCOLS && 
                         draw_y >= 0 && draw_y < LROWS && pixel > 0) {
@@ -473,16 +481,14 @@ static void render_text_vertical_down(int layer, int x, int y, RGBA fg, RGBA bg,
     if (available_height > max_height * 8)  /* Limit to 8 rows max */
         available_height = max_height * 8;
     
-    /* Clear the background area - use opaque version of bg color */
-    RGBA clear_bg = bg;
-    clear_bg.A = 255;  /* Force opaque for proper dirty rect update */
+    /* Clear the background area using configured bg color */
     for (int cy = 0; cy < available_height; cy++) {
         for (int cx = 0; cx < char_width + 8; cx++) {
             int draw_x = x + cx;
             int draw_y = y + cy;
             if (draw_x >= 0 && draw_x < LCOLS && 
                 draw_y >= 0 && draw_y < LROWS) {
-                fb[draw_y * LCOLS + draw_x] = clear_bg;
+                fb[draw_y * LCOLS + draw_x] = bg;
             }
         }
     }
