@@ -390,9 +390,6 @@ int drv_generic_graphic_draw(WIDGET * W)
 
     fg = W->fg_valid ? W->fg_color : FG_COL;
     bg = W->bg_valid ? W->bg_color : BG_COL;
-
-    // Ensure background is opaque for proper framebuffer updates
-    bg.A = 255;
     
     font_str = P2S(&Text->font);
     

@@ -213,14 +213,16 @@ static void render_text_horizontal(int layer, int x, int y, RGBA fg, RGBA bg, co
     
     if (max_descent < 0) max_descent = 0;
     
-    /* Clear the background area */
+    /* Clear the background area - use opaque version of bg color */
+    RGBA clear_bg = bg;
+    clear_bg.A = 255;  /* Force opaque for proper dirty rect update */
     for (int cy = 0; cy < ft_font_height; cy++) {
         for (int cx = 0; cx < total_width + 10; cx++) {
             int draw_x = x + cx;
             int draw_y = y + cy;
             if (draw_x >= 0 && draw_x < LCOLS && 
                 draw_y >= 0 && draw_y < LROWS) {
-                fb[draw_y * LCOLS + draw_x] = bg;
+                fb[draw_y * LCOLS + draw_x] = clear_bg;
             }
         }
     }
@@ -471,14 +473,16 @@ static void render_text_vertical_down(int layer, int x, int y, RGBA fg, RGBA bg,
     if (available_height > max_height * 8)  /* Limit to 8 rows max */
         available_height = max_height * 8;
     
-    /* Clear the background area */
+    /* Clear the background area - use opaque version of bg color */
+    RGBA clear_bg = bg;
+    clear_bg.A = 255;  /* Force opaque for proper dirty rect update */
     for (int cy = 0; cy < available_height; cy++) {
         for (int cx = 0; cx < char_width + 8; cx++) {
             int draw_x = x + cx;
             int draw_y = y + cy;
             if (draw_x >= 0 && draw_x < LCOLS && 
                 draw_y >= 0 && draw_y < LROWS) {
-                fb[draw_y * LCOLS + draw_x] = bg;
+                fb[draw_y * LCOLS + draw_x] = clear_bg;
             }
         }
     }
