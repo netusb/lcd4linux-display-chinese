@@ -831,42 +831,50 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
             char text[8];
             snprintf(text, sizeof(text), "%d%%", pct);
             
-            /* use value_size for font dimensions */
-            int font_size = Graph->value_size;
-            int char_w = font_size / 2;      /* 字符宽度约为字体大小的一半 */
-            int char_h = font_size;          /* 字符高度等于字体大小 */
-            
-            /* draw simple text representation */
-            int text_x = col + width - char_w * 4;
-            int text_y = row + 2;
-            
-            /* draw text background */
-            for (y = text_y; y < text_y + char_h && y < row + height; y++) {
-                for (x = text_x; x < text_x + char_w * 4 && x < col + width; x++) {
-                    if (y >= row && y < row + height && x >= col && x < col + width) {
-                        drv_generic_graphic_FB[layer][y * LCOLS + x] = bg_color;
-                    }
-                }
-            }
-            
-            /* draw simple digits */
-            int digit_x = text_x + 2;
-            const char *p = text;
-            while (*p && digit_x < col + width - char_w) {
-                int digit = *p - '0';
-                if (*p == '%') digit = 10;
-                if (*p >= '0' && *p <= '9' || *p == '%') {
-                    for (int dy = 0; dy < font_size - 2 && text_y + dy < row + height; dy++) {
-                        for (int dx = 0; dx < font_size / 2 - 1 && digit_x + dx < col + width; dx++) {
-                            if (digit_x + dx >= col && digit_x + dx < col + width && 
-                                text_y + dy >= row && text_y + dy < row + height) {
-                                drv_generic_graphic_FB[layer][(text_y + dy) * LCOLS + (digit_x + dx)] = Graph->text_color;
-                            }
+            /* use TTF font for rendering if available */
+            if (font_ttf_is_available()) {
+                int tw = font_ttf_get_width();
+                int th = font_ttf_get_height();
+                int text_len = strlen(text);
+                int text_x = col + width - tw * text_len - 2;
+                int text_y = row + 2;
+                
+                /* render text using TrueType font */
+                font_ttf_render(layer, text_x, text_y, Graph->text_color, bg_color, text, tw * text_len, 0, th);
+            } else {
+                /* fallback: use simple rendering */
+                int font_size = Graph->value_size;
+                int char_w = font_size / 2;
+                int char_h = font_size;
+                int text_x = col + width - char_w * 4;
+                int text_y = row + 2;
+                
+                /* draw text background */
+                for (y = text_y; y < text_y + char_h && y < row + height; y++) {
+                    for (x = text_x; x < text_x + char_w * 4 && x < col + width; x++) {
+                        if (y >= row && y < row + height && x >= col && x < col + width) {
+                            drv_generic_graphic_FB[layer][y * LCOLS + x] = bg_color;
                         }
                     }
-                    digit_x += char_w;
                 }
-                p++;
+                
+                /* draw simple digits */
+                int digit_x = text_x + 2;
+                const char *p = text;
+                while (*p && digit_x < col + width - char_w) {
+                    if (*p >= '0' && *p <= '9' || *p == '%') {
+                        for (int dy = 0; dy < font_size - 2 && text_y + dy < row + height; dy++) {
+                            for (int dx = 0; dx < font_size / 2 - 1 && digit_x + dx < col + width; dx++) {
+                                if (digit_x + dx >= col && digit_x + dx < col + width && 
+                                    text_y + dy >= row && text_y + dy < row + height) {
+                                    drv_generic_graphic_FB[layer][(text_y + dy) * LCOLS + (digit_x + dx)] = Graph->text_color;
+                                }
+                            }
+                        }
+                        digit_x += char_w;
+                    }
+                    p++;
+                }
             }
         }
     }
