@@ -13,34 +13,66 @@
 #include "widget.h"
 #include "rgb.h"
 
-typedef enum { 
-    ARC_STYLE_SEMI = 0,
-    ARC_STYLE_QUARTER = 1,
-    ARC_STYLE_FULL = 2
-} ARC_STYLE;
-
+/* AIDA64 style Arc Gauge widget */
 typedef struct WIDGET_ARC {
     PROPERTY expression;
     PROPERTY expr_min;
     PROPERTY expr_max;
     PROPERTY update;
-    int width;
-    int height;
+    
+    /* Basic appearance */
+    int diameter;           /* Diameter in pixels */
+    int thickness;          /* Arc thickness in pixels */
+    double start_angle;     /* Start angle (0=right, 90=down, 180=left, 270=up) */
+    
+    /* Value display */
+    int show_value;         /* 1=show value text, 0=hide */
+    int value_text_size;    /* Text size in pixels */
+    char *value_font;       /* Font name for value */
+    int value_bold;         /* 1=bold, 0=normal */
+    int value_italic;       /* 1=italic, 0=normal */
+    RGBA value_text_color;  /* Value text color */
+    
+    /* Needle display */
+    int show_needle;        /* 1=show needle, 0=hide */
+    int needle_length;      /* Needle length (pixels from center) */
+    int needle_width;       /* Needle width (pixels) */
+    RGBA needle_color;      /* Needle color */
+    RGBA center_color;      /* Center circle color (origin) */
+    
+    /* Text position */
+    int text_below;         /* 1=text below arc, 0=text in center */
+    
+    /* Direction */
+    int reverse;            /* 1=reverse direction (left to right), 0=normal (right to left) */
+    
+    /* Background */
+    int show_background;    /* 1=show background, 0=transparent */
+    RGBA background_color;  /* Background color */
+    
+    /* Value range */
     double min;
     double max;
     double value;
-    double start_angle;
-    double end_angle;
-    int style;
-    int num_major;
-    int num_minor;
-    RGBA arc_color;
-    RGBA needle_color;
-    RGBA tick_color;
-    RGBA center_color;
-    RGBA text_color;
-    RGBA bg_color;
-    int thickness;
+    
+    /* Alert thresholds (5 limits define 4 segments) */
+    double limit_min;       /* Min value (0%) */
+    double limit_1;         /* Limit 1 threshold */
+    double limit_2;         /* Limit 2 threshold */
+    double limit_3;         /* Limit 3 threshold */
+    double limit_max;       /* Max value (100%) */
+    
+    /* Arc colors for each segment */
+    RGBA arc_color_min;     /* Min ~ Limit 1: Green (normal) */
+    RGBA arc_color_1;       /* Limit 1 ~ Limit 2: Yellow (warning) */
+    RGBA arc_color_2;       /* Limit 2 ~ Limit 3: Orange (medium alert) */
+    RGBA arc_color_3;       /* Limit 3 ~ Max: Red (high alert) */
+    
+    /* Background colors for each segment (usually transparent/black) */
+    RGBA back_color_min;
+    RGBA back_color_1;
+    RGBA back_color_2;
+    RGBA back_color_3;
 } WIDGET_ARC;
 
 

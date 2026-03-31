@@ -34,6 +34,7 @@ typedef struct WIDGET_GRAPH {
     RGBA bg_color;
     RGBA grid_color;
     RGBA text_color;
+    RGBA value_bg_color;    /* 数值背景颜色 */
     int style;
     int grid_lines;
     int show_value;

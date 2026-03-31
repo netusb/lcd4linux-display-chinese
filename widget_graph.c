@@ -137,6 +137,11 @@ int widget_graph_init(WIDGET * Self)
     Graph->text_color.B = 255;
     Graph->text_color.A = 255;
 
+    Graph->value_bg_color.R = 0;
+    Graph->value_bg_color.G = 0;
+    Graph->value_bg_color.B = 0;
+    Graph->value_bg_color.A = 0;  /* default: transparent */
+
     /* try to override with config colors, but keep defaults if not set */
     {
         char *color;
@@ -168,6 +173,12 @@ int widget_graph_init(WIDGET * Self)
         color = cfg_get(section, "text_color", NULL);
         if (color && *color && color2RGBA(color, &c) >= 0) {
             Graph->text_color = c;
+        }
+        if (color) free(color);
+        
+        color = cfg_get(section, "value_bg_color", NULL);
+        if (color && *color && color2RGBA(color, &c) >= 0) {
+            Graph->value_bg_color = c;
         }
         if (color) free(color);
     }

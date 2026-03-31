@@ -52,10 +52,11 @@ int font_ttf_init(const char *fontfile, int size)
     ft_font_size = size;
     FT_Set_Pixel_Sizes(ft_face, 0, size);
     
-    ft_font_width = (ft_face->max_advance_width + 63) / 64;
+    /* For CJK fonts, use font size as character width (CJK chars are square) */
+    /* max_advance_width can be incorrect for CJK fonts in .ttc collections */
+    ft_font_width = size;
     ft_font_height = (ft_face->size->metrics.height + 63) / 64;
     
-    if (ft_font_width == 0) ft_font_width = size;
     if (ft_font_height == 0) ft_font_height = size;
     
     /* Enable UTF-8 mode */
@@ -111,10 +112,10 @@ int font_ttf_switch(const char *fontfile, int size)
     }
     ft_face = new_face;
     ft_font_size = size;
-    ft_font_width = (ft_face->max_advance_width + 63) / 64;
+    /* For CJK fonts, use font size as character width (CJK chars are square) */
+    ft_font_width = size;
     ft_font_height = (ft_face->size->metrics.height + 63) / 64;
     
-    if (ft_font_width == 0) ft_font_width = size;
     if (ft_font_height == 0) ft_font_height = size;
     
     return 0;
@@ -129,7 +130,8 @@ void font_ttf_restore(void)
     
     FT_Set_Pixel_Sizes(ft_face, 0, saved_size);
     ft_font_size = saved_size;
-    ft_font_width = (ft_face->max_advance_width + 63) / 64;
+    /* For CJK fonts, use font size as character width (CJK chars are square) */
+    ft_font_width = saved_size;
     ft_font_height = (ft_face->size->metrics.height + 63) / 64;
 }
 
@@ -144,10 +146,10 @@ int font_ttf_setsize(int size)
     
     FT_Set_Pixel_Sizes(ft_face, 0, size);
     ft_font_size = size;
-    ft_font_width = (ft_face->max_advance_width + 63) / 64;
+    /* For CJK fonts, use font size as character width (CJK chars are square) */
+    ft_font_width = size;
     ft_font_height = (ft_face->size->metrics.height + 63) / 64;
     
-    if (ft_font_width == 0) ft_font_width = size;
     if (ft_font_height == 0) ft_font_height = size;
     
     return 0;
@@ -275,10 +277,19 @@ static void render_text_horizontal(int layer, int x, int y, RGBA fg, RGBA bg, co
                         draw_y >= 0 && draw_y < LROWS && pixel > 0) {
                         unsigned char alpha = pixel;
                         RGBA blended;
-                        blended.R = (fg.R * alpha + bg.R * (255 - alpha)) / 255;
-                        blended.G = (fg.G * alpha + bg.G * (255 - alpha)) / 255;
-                        blended.B = (fg.B * alpha + bg.B * (255 - alpha)) / 255;
-                        blended.A = fg.A;
+                        if (bg.A == 0) {
+                            /* Transparent background - draw foreground only */
+                            blended.R = fg.R;
+                            blended.G = fg.G;
+                            blended.B = fg.B;
+                            blended.A = (alpha * fg.A) / 255;
+                        } else {
+                            /* Opaque background - blend */
+                            blended.R = (fg.R * alpha + bg.R * (255 - alpha)) / 255;
+                            blended.G = (fg.G * alpha + bg.G * (255 - alpha)) / 255;
+                            blended.B = (fg.B * alpha + bg.B * (255 - alpha)) / 255;
+                            blended.A = fg.A;
+                        }
                         fb[draw_y * LCOLS + draw_x] = blended;
                     }
                 }
@@ -538,16 +549,25 @@ static void render_text_vertical_down(int layer, int x, int y, RGBA fg, RGBA bg,
                         int draw_x = char_x + bx;
                         int draw_y = char_y + by;
                         
-                        if (draw_x >= 0 && draw_x < LCOLS && 
-                            draw_y >= 0 && draw_y < LROWS) {
-                            unsigned char alpha = pixel;
-                            RGBA blended;
+                    if (draw_x >= 0 && draw_x < LCOLS && 
+                        draw_y >= 0 && draw_y < LROWS && pixel > 0) {
+                        unsigned char alpha = pixel;
+                        RGBA blended;
+                        if (bg.A == 0) {
+                            /* Transparent background - just draw foreground with alpha */
+                            blended.R = fg.R;
+                            blended.G = fg.G;
+                            blended.B = fg.B;
+                            blended.A = (alpha * fg.A) / 255;
+                        } else {
+                            /* Opaque background - blend */
                             blended.R = (fg.R * alpha + bg.R * (255 - alpha)) / 255;
                             blended.G = (fg.G * alpha + bg.G * (255 - alpha)) / 255;
                             blended.B = (fg.B * alpha + bg.B * (255 - alpha)) / 255;
-                            blended.A = 255;
-                            fb[draw_y * LCOLS + draw_x] = blended;
+                            blended.A = fg.A;
                         }
+                        fb[draw_y * LCOLS + draw_x] = blended;
+                    }
                     }
                 }
             }
