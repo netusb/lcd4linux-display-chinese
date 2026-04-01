@@ -44,7 +44,7 @@ typedef struct WIDGET_ARC {
     int text_below;         /* 1=text below arc, 0=text in center */
     
     /* Direction */
-    int reverse;            /* 1=reverse direction (left to right), 0=normal (right to left) */
+    int reverse;            /* 1=left to right (via top), 0=right to left (via bottom) */
     
     /* Background */
     int show_background;    /* 1=show background, 0=transparent */

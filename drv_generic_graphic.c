@@ -1079,56 +1079,56 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     while (arc_start_angle < 0) arc_start_angle += 360;
     while (arc_start_angle >= 360) arc_start_angle -= 360;
 
-    /* reverse: controls draw direction FROM 0° (right) TO start_angle
-       reverse=0: counter-clockwise (angle decreases, via top/270°)
-       reverse=1: clockwise (angle increases, via bottom/90°) */
+    /* reverse: controls draw direction from start_angle
+       reverse=1: angle decreases (via top, e.g. 0°→270°→180° = right→top→left)
+       reverse=0: angle increases (via bottom, e.g. 0°→90°→180° = right→bottom→left) */
 
     /* total_range: half circle = 180 degrees */
     total_range = 180.0;
     sweep_deg = total_range;
 
-    /* Arc direction: 1=clockwise (angle increases), 0=counter-clockwise (angle decreases) */
-    arc_direction = Arc->reverse ? 1 : 0;
+    /* Arc direction: 0=angle decreases (via top), 1=angle increases (via bottom) */
+    arc_direction = Arc->reverse ? 0 : 1;
 
-    /* Calculate arc: always starts at 0°, ends based on value and direction */
+    /* Calculate arc end angle from start_angle based on value */
     if (arc_direction) {
-        /* Clockwise: angle increases (0° → 90° → 180° = right→bottom→left) */
-        arc_end_angle = normalized * total_range;
+        /* Angle increases from start_angle (via bottom) */
+        arc_end_angle = arc_start_angle + normalized * total_range;
     } else {
-        /* Counter-clockwise: angle decreases (0° → 270° → 180° = right→top→left) */
-        arc_end_angle = -normalized * total_range;
+        /* Angle decreases from start_angle (via top) */
+        arc_end_angle = arc_start_angle - normalized * total_range;
     }
     while (arc_end_angle < 0) arc_end_angle += 360;
     while (arc_end_angle >= 360) arc_end_angle -= 360;
 
-    /* Draw background arc from 0° to start_angle */
+    /* Draw background arc from start_angle in the direction of reverse */
     {
         double bg_end;
         if (arc_direction) {
-            /* CW: angle increases */
-            bg_end = arc_start_angle;
+            /* Angle increases */
+            bg_end = arc_start_angle + total_range;
         } else {
-            /* CCW: angle decreases */
-            bg_end = -arc_start_angle;
+            /* Angle decreases */
+            bg_end = arc_start_angle - total_range;
         }
         while (bg_end < 0) bg_end += 360;
         while (bg_end >= 360) bg_end -= 360;
         while (bg_end < 0) bg_end += 360;
         while (bg_end >= 360) bg_end -= 360;
 
-        /* Draw background with multi-color segments from 0° to start_angle */
+        /* Draw background with multi-color segments from start_angle */
         double segment_sweep = total_range / 4.0;
         int seg;
         for (seg = 0; seg < 4; seg++) {
             double seg_start, seg_end;
             if (arc_direction) {
-                /* CW: angle increases from 0° */
-                seg_start = seg * segment_sweep;
-                seg_end = (seg + 1) * segment_sweep;
+                /* Angle increases from start_angle */
+                seg_start = arc_start_angle + seg * segment_sweep;
+                seg_end = arc_start_angle + (seg + 1) * segment_sweep;
             } else {
-                /* CCW: angle decreases from 0° */
-                seg_start = -seg * segment_sweep;
-                seg_end = -(seg + 1) * segment_sweep;
+                /* Angle decreases from start_angle */
+                seg_start = arc_start_angle - seg * segment_sweep;
+                seg_end = arc_start_angle - (seg + 1) * segment_sweep;
             }
             while (seg_start < 0) seg_start += 360;
             while (seg_start >= 360) seg_start -= 360;
@@ -1155,27 +1155,27 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
         double value_range = normalized * total_range;
         double segment_sweep = total_range / 4.0;
 
-        /* Draw segments from 0° up to current value */
+        /* Draw segments from start_angle up to current value */
         double remaining = value_range;
         int seg = 0;
         while (remaining > 0.001 && seg < 4) {
             double seg_start, seg_end;
             if (arc_direction) {
-                /* CW: angle increases from 0° */
-                seg_start = seg * segment_sweep;
+                /* Angle increases from start_angle */
+                seg_start = arc_start_angle + seg * segment_sweep;
             } else {
-                /* CCW: angle decreases from 0° */
-                seg_start = -seg * segment_sweep;
+                /* Angle decreases from start_angle */
+                seg_start = arc_start_angle - seg * segment_sweep;
             }
             while (seg_start < 0) seg_start += 360;
             while (seg_start >= 360) seg_start -= 360;
 
             double seg_draw = (remaining < segment_sweep) ? remaining : segment_sweep;
             if (arc_direction) {
-                /* CW: angle increases */
+                /* Angle increases */
                 seg_end = seg_start + seg_draw;
             } else {
-                /* CCW: angle decreases */
+                /* Angle decreases */
                 seg_end = seg_start - seg_draw;
             }
             while (seg_end < 0) seg_end += 360;
