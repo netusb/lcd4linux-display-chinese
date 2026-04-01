@@ -148,49 +148,47 @@ Graph 组件用于显示数据的历史变化趋势，类似于 AIDA64 的性能
 | max | 最大值 | 100 |
 | update | 更新间隔(毫秒) | 1000 |
 | points | 数据点数量 | 50 |
-| style | 样式 (0=线, 1=面积) | 0 |
-| color | 线条颜色 | #00FF00 |
-| fill | 填充颜色 | #008000 |
-| bg | 背景颜色 | #000000 |
-| grid | 网格颜色 | #404040 |
+| width | 图表宽度(像素) | 40 |
+| height | 图表高度(像素) | 20 |
+| style | 样式 (0=线, 1=填充) | 0 |
+| direction | 方向 (0=左到右, 1=右到左) | 0 |
+| value | 显示数值 (0/1) | 1 |
+| value_size | 数值文字大小(像素) | 10 |
+| value_precision | 数值小数位数 (0,1,2) | 0 |
+| value_unit | 数值单位后缀 | "%" |
+| value_bg_color | 数值背景颜色(RGBA) | 透明 |
+| line_color | 线条颜色 | #00FF00 |
+| fill_color | 填充颜色 | #008000 |
+| bg_color | 背景颜色 | #000000 |
+| grid_color | 网格颜色 | #404040 |
+| text_color | 文字颜色 | #FFFFFF |
 
 ### 使用示例
 
 ```conf
 Widget CPU_Graph {
-    class 'graph'
-    expression 'cpu::cpu0'
-    width 100
-    height 40
+    class 'Graph'
+    expression proc_stat::cpu('busy', 500)
+    width 8
+    height 2
     min 0
     max 100
     update 500
-    points 60
-    style 1              # 1=面积填充, 0=纯线条
-    color '#00FF00'      # 绿色线条
-    fill '#003300'       # 半透明绿色填充
-}
-
-Widget Memory_Graph {
-    class 'graph'
-    expression 'mem::used'
-    width 100
-    height 40
-    min 0
-    max 'mem::total'
-    update 1000
-    points 50
-}
-
-Layout Main {
-    Row1 { Col1 'CPU_Graph' }
-    Row2 { Col1 'Memory_Graph' }
+    points 500
+    style 0
+    value 1
+    value_size 8
+    value_precision 0
+    value_unit '%'
+    value_bg_color '00000000'    # 透明背景
+    line_color '00ff00'
+    bg_color 'FF8000'
 }
 ```
 
 ## Arc 组件 (弧形仪表盘)
 
-Arc 组件用于显示单个数值的仪表盘，类似于汽车速度表或 AIDA64 的传感器显示。
+Arc 组件用于显示单个数值的 AIDA64 风格弧形仪表盘，支持 180° 半圆显示和彩色渐变。
 
 ### 配置参数
 
@@ -200,49 +198,53 @@ Arc 组件用于显示单个数值的仪表盘，类似于汽车速度表或 AID
 | min | 最小值 | 0 |
 | max | 最大值 | 100 |
 | update | 更新间隔(毫秒) | 1000 |
-| style | 样式 (semi/quarter/full) | semi |
-| ticks | 主刻度数量 | 5 |
-| minor | 主刻度间小刻度数量 | 5 |
-| thickness | 弧线厚度 | 8 |
-| arc | 弧线背景颜色 | #404040 |
-| needle | 指针颜色 | #FF0000 |
-| center | 中心圆颜色 | #808080 |
-| bg | 背景颜色 | #000000 |
+| diameter | 直径(像素) | 100 |
+| thickness | 弧线厚度 | 6 |
+| reverse | 方向 (0=右到左, 1=左到右) | 0 |
+| show_background | 显示背景 (0/1) | 1 |
+| background_color | 背景颜色 | #222222 |
+| show_value | 显示数值 (0/1) | 1 |
+| value_text_size | 数值文字大小(像素) | 12 |
+| value_text_color | 数值文字颜色 | #FFFFFF |
+| value_precision | 数值小数位数 (0,1,2) | 0 |
+| value_unit | 数值单位后缀 | "" |
+| show_needle | 显示指针 (0/1) | 1 |
+| needle_length | 指针长度(像素) | 0(自动) |
+| needle_width | 指针宽度(像素) | 2 |
+| needle_color | 指针颜色 | #FF0000 |
+| center_color | 中心点颜色 | #444444 |
+| arc_color_min | 第一段弧线颜色 | #00FF00 |
+| arc_color_1 | 第二段弧线颜色 | #FFFF00 |
+| arc_color_2 | 第三段弧线颜色 | #FF8800 |
+| arc_color_3 | 第四段弧线颜色 | #FF0000 |
 
 ### 使用示例
 
 ```conf
 Widget CPU_Arc {
-    class 'arc'
-    expression 'cpu::used'
-    width 80
-    height 50
+    class 'Arc'
+    expression proc_stat::cpu('busy', 500)
     min 0
     max 100
-    update 1000
-    style 'semi'         # semi=半圆, quarter=四分之一, full=整圆
-    ticks 5
-    minor 5
-    thickness 8
-    needle '#FF0000'     # 红色指针
-    arc '#404040'        # 灰色弧线背景
-}
-
-Widget Temperature_Arc {
-    class 'arc'
-    expression 'thermal::thermal_zone0'
-    width 60
-    height 40
-    min 30
-    max 90
-    update 2000
-    style 'semi'
-    ticks 6
+    diameter 100
     thickness 6
-}
-
-Layout Main {
-    Row1 { Col1 'CPU_Arc' Col2 'Temperature_Arc' }
+    reverse 1              # 1=左到右, 0=右到左
+    show_background 1
+    background_color '222222'
+    show_value 1
+    value_text_size 16
+    value_text_color 'ffffff'
+    value_precision 0
+    value_unit ''
+    show_needle 1
+    needle_length 23
+    needle_width 2
+    needle_color 'ff0000'
+    center_color '444444'
+    arc_color_min '00ff00'  # 绿色
+    arc_color_1 'ffff00'    # 黄色
+    arc_color_2 'ff8800'    # 橙色
+    arc_color_3 'ff0000'    # 红色
 }
 ```
 
@@ -320,6 +322,17 @@ apt-get install libusb-1.0-0-dev libusb-dev
 netstat -tlnp | grep 5900
 ```
 
+## 更新日志
+
+### 最新版本
+- ✅ Arc 组件: 修复 reverse 方向控制 (reverse=0/1)
+- ✅ Arc 组件: 修复弧线超出直径边界
+- ✅ Arc 组件: 修复 value_precision 配置
+- ✅ Graph 组件: 添加 value_precision 和 value_unit 参数
+- ✅ Graph 组件: 修复 value_bg_color 透明背景
+- ✅ 修复 Text 组件透明背景时的文字叠影问题
+- ✅ 修复 VNC 颜色显示顺序
+
 ## 使用协议
 
 基于 LCD4Linux 原协议，遵循 GPL v2。
@@ -329,3 +342,4 @@ netstat -tlnp | grep 5900
 - [LCD4Linux 官网](http://lcd4linux.bulix.org/)
 - [FreeType 官网](https://www.freetype.org/)
 - [Noto Sans CJK 字体](https://www.google.com/get/noto/)
+- [Release 下载](https://github.com/netusb/lcd4linux-display-chinese/releases)
