@@ -1019,19 +1019,8 @@ static void draw_arc_segment_simple(int layer, int cx, int cy, int radius, doubl
 int drv_generic_graphic_arc_draw(WIDGET * W)
 {
     WIDGET_ARC *Arc = (WIDGET_ARC *) W->data;
-    int row, col, diameter, layer;
-    double value, min, max, normalized, sweep_deg, arc_start_angle, arc_direction, total_range;
-    int radius, cx, cy, i;
-    double arc_end_angle;
-    int text_len, text_width, th, text_x, text_y;
-    char *text;
-    int font_size = 10;
-
-    /* Get widget position */
-    row = W->row;
-    col = W->col;
-    layer = W->layer;
-
+    int row = W->row, col = W->col, layer = W->layer;
+    
     /* Convert RC (row/col) to pixel coordinates */
     if (W->class->type == WIDGET_TYPE_RC) {
         row = row * YRES;
@@ -1039,220 +1028,155 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     }
 
     /* Get widget properties */
-    diameter = Arc->diameter;
-    radius = diameter / 2;
-    cx = col + radius;
-    cy = row + radius;
+    int diameter = Arc->diameter;
+    int radius = diameter / 2;
+    int cx = col + radius;
+    int cy = row + radius;
 
     /* Ensure framebuffer is large enough */
     drv_generic_graphic_resizeFB(row + diameter, col + diameter);
 
-    /* Always clear the arc area first to prevent ghosting */
+    /* Clear the arc area with background color if enabled, otherwise transparent */
     {
-        RGBA clear_color = Arc->show_background ? Arc->background_color : NO_COL;
+        RGBA clear = Arc->show_background ? Arc->background_color : NO_COL;
+        int i;
         for (i = 0; i < diameter * diameter; i++) {
-            int x = i % diameter;
-            int y = i / diameter;
-            if (col + x >= 0 && col + x < LCOLS && row + y >= 0 && row + y < LROWS)
-                drv_generic_graphic_FB[layer][(row + y) * LCOLS + (col + x)] = clear_color;
+            int x = col + (i % diameter);
+            int y = row + (i / diameter);
+            if (x >= 0 && x < LCOLS && y >= 0 && y < LROWS)
+                drv_generic_graphic_FB[layer][y * LCOLS + x] = clear;
         }
     }
 
-    /* Get current value */
-    value = Arc->value;
-    min = Arc->min;
-    max = Arc->max;
+    /* Get and clamp value */
+    double value = Arc->value;
+    if (value < Arc->min) value = Arc->min;
+    if (value > Arc->max) value = Arc->max;
+    double normalized = (Arc->max > Arc->min) ? (value - Arc->min) / (Arc->max - Arc->min) : 0;
 
-    /* Clamp value */
-    if (value < min) value = min;
-    if (value > max) value = max;
+    /* AIDA64 style: always from left(180°) through top(90°) to right(0°) */
+    /* Y-flip: y = cy - r*sin(a), so sin positive = up */
+    double arc_start = 180.0;
+    double arc_total = 180.0;
+    double value_deg = normalized * arc_total;
 
-    /* Calculate normalized value (0 to 1) */
-    if (max > min)
-        normalized = (value - min) / (max - min);
-    else
-        normalized = 0;
+    /* Calculate safe radius range that stays within diameter */
+    /* The arc center is at (cx, cy), radius is diameter/2 */
+    /* To stay within bounds, max draw radius = radius - 1 */
+    int draw_r_max = radius - 1;  /* Max radius to stay within diameter */
+    int draw_r_min = draw_r_max - Arc->thickness + 1;  /* Min radius based on thickness */
+    if (draw_r_min < 1) draw_r_min = 1;  /* Don't go below 1 */
 
-    /* Setup arc parameters - arc always goes through top (270°)
-       reverse=1: from left(180°) via top(270°) to right(0°) - angle increases
-       reverse=0: from right(0°) via top(270°) to left(180°) - angle decreases */
-
-    /* total_range: half circle = 180 degrees */
-    total_range = 180.0;
-    sweep_deg = total_range;
-
-    /* Start angle based on reverse */
-    if (Arc->reverse) {
-        arc_start_angle = 180;  /* Start from left */
-        arc_direction = 1;      /* Angle increases: 180°→270°→0° */
-    } else {
-        arc_start_angle = 0;    /* Start from right */
-        arc_direction = 0;      /* Angle decreases: 0°→270°→180° */
-    }
-
-    /* Calculate arc end angle based on value */
-    if (arc_direction) {
-        /* Angle increases from 180° */
-        arc_end_angle = arc_start_angle + normalized * total_range;
-    } else {
-        /* Angle decreases from 0° */
-        arc_end_angle = arc_start_angle - normalized * total_range;
-    }
-    while (arc_end_angle < 0) arc_end_angle += 360;
-    while (arc_end_angle >= 360) arc_end_angle -= 360;
-
-    /* Draw background arc */
-    {
-        double bg_end;
-        if (arc_direction) {
-            bg_end = arc_start_angle + total_range;  /* 180° + 180° = 360° = 0° */
-        } else {
-            bg_end = arc_start_angle - total_range;  /* 0° - 180° = -180° = 180° */
-        }
-        while (bg_end < 0) bg_end += 360;
-        while (bg_end >= 360) bg_end -= 360;
-
-        /* Draw background with multi-color segments from start_angle */
-        double segment_sweep = total_range / 4.0;
-        int seg;
-        for (seg = 0; seg < 4; seg++) {
-            double seg_start, seg_end;
-            if (arc_direction) {
-                /* Angle increases from start_angle */
-                seg_start = arc_start_angle + seg * segment_sweep;
-                seg_end = arc_start_angle + (seg + 1) * segment_sweep;
-            } else {
-                /* Angle decreases from start_angle */
-                seg_start = arc_start_angle - seg * segment_sweep;
-                seg_end = arc_start_angle - (seg + 1) * segment_sweep;
-            }
-            while (seg_start < 0) seg_start += 360;
-            while (seg_start >= 360) seg_start -= 360;
-            while (seg_end < 0) seg_end += 360;
-            while (seg_end >= 360) seg_end -= 360;
-
-            RGBA *back_color;
-            switch (seg) {
-                case 0: back_color = &Arc->back_color_min; break;
-                case 1: back_color = &Arc->back_color_1; break;
-                case 2: back_color = &Arc->back_color_2; break;
-                case 3: back_color = &Arc->back_color_3; break;
-                default: back_color = &Arc->back_color_min;
-            }
-
-            if (back_color->A > 0) {
-                draw_arc_segment_simple(layer, cx, cy, radius, seg_start, seg_end, back_color, Arc->thickness, arc_direction);
+    /* Draw background arc if enabled */
+    if (Arc->show_background) {
+        double a;
+        for (a = 0; a <= arc_total; a += 1.0) {
+            double angle = arc_start - a;
+            double rad = angle * M_PI / 180.0;
+            
+            int r;
+            for (r = draw_r_min; r <= draw_r_max; r++) {
+                int x = cx + (int)(r * cos(rad));
+                int y = cy - (int)(r * sin(rad));
+                if (x >= 0 && x < LCOLS && y >= 0 && y < LROWS)
+                    drv_generic_graphic_FB[layer][y * LCOLS + x] = Arc->background_color;
             }
         }
     }
 
-    /* Draw value arc (colored segments based on thresholds) */
-    if (normalized > 0.001) {
-        double value_range = normalized * total_range;
-        double segment_sweep = total_range / 4.0;
-
-        /* Draw segments from start_angle up to current value */
-        double remaining = value_range;
-        int seg = 0;
-        while (remaining > 0.001 && seg < 4) {
-            double seg_start, seg_end;
-            if (arc_direction) {
-                /* Angle increases from start_angle */
-                seg_start = arc_start_angle + seg * segment_sweep;
-            } else {
-                /* Angle decreases from start_angle */
-                seg_start = arc_start_angle - seg * segment_sweep;
+    /* Draw value arc */
+    if (value_deg > 0.5) {
+        double a;
+        for (a = 0; a < value_deg; a += 0.5) {
+            double angle = arc_start - a;  /* 180° → 90° → 0° */
+            double rad = angle * M_PI / 180.0;
+            
+            /* Color based on position */
+            RGBA *color;
+            double pct = a / arc_total;
+            if (pct < 0.25) color = &Arc->arc_color_min;
+            else if (pct < 0.50) color = &Arc->arc_color_1;
+            else if (pct < 0.75) color = &Arc->arc_color_2;
+            else color = &Arc->arc_color_3;
+            
+            int r;
+            for (r = draw_r_min; r <= draw_r_max; r++) {
+                int x = cx + (int)(r * cos(rad));
+                int y = cy - (int)(r * sin(rad));
+                if (x >= 0 && x < LCOLS && y >= 0 && y < LROWS)
+                    drv_generic_graphic_FB[layer][y * LCOLS + x] = *color;
             }
-            while (seg_start < 0) seg_start += 360;
-            while (seg_start >= 360) seg_start -= 360;
-
-            double seg_draw = (remaining < segment_sweep) ? remaining : segment_sweep;
-            if (arc_direction) {
-                /* Angle increases */
-                seg_end = seg_start + seg_draw;
-            } else {
-                /* Angle decreases */
-                seg_end = seg_start - seg_draw;
-            }
-            while (seg_end < 0) seg_end += 360;
-            while (seg_end >= 360) seg_end -= 360;
-
-            RGBA *arc_color;
-            switch (seg) {
-                case 0: arc_color = &Arc->arc_color_min; break;
-                case 1: arc_color = &Arc->arc_color_1; break;
-                case 2: arc_color = &Arc->arc_color_2; break;
-                case 3: arc_color = &Arc->arc_color_3; break;
-                default: arc_color = &Arc->arc_color_min;
-            }
-
-            draw_arc_segment_simple(layer, cx, cy, radius, seg_start, seg_end, arc_color, Arc->thickness, arc_direction);
-
-            remaining -= seg_draw;
-            seg++;
         }
     }
 
-    /* Calculate needle parameters (used for both needle and text positioning) */
-    double needle_angle = arc_end_angle;
-    double rad = needle_angle * M_PI / 180.0;
-    int nlen = Arc->needle_length;
-    if (nlen <= 0) {
-        nlen = radius - Arc->thickness - 5;
-        if (nlen < 5) nlen = 5;
-    }
-
-    /* Draw needle if enabled */
+    /* Draw needle - ensure it stays within diameter */
     if (Arc->show_needle) {
-        /* Draw needle */
-        draw_needle_line(layer, cx, cy, nlen, needle_angle, &Arc->needle_color, Arc->needle_width);
-
-        /* Draw center circle */
-        draw_center_circle(layer, cx, cy, Arc->needle_width + 2, &Arc->center_color);
-    }
-
-    /* Draw value text if show_value is enabled */
-    if (Arc->show_value && font_ttf_is_available()) {
-        char text_buf[32];
-
-        /* Format the value as text */
-        if (value >= 100)
-            snprintf(text_buf, sizeof(text_buf), "%.0f", value);
-        else if (value >= 10)
-            snprintf(text_buf, sizeof(text_buf), "%.1f", value);
-        else
-            snprintf(text_buf, sizeof(text_buf), "%.2f", value);
-
-        text = text_buf;
-        text_len = strlen(text);
-        th = Arc->value_text_size > 0 ? Arc->value_text_size : font_size;
-        text_width = text_len * (th * 6 / 10);
-
-        if (Arc->text_below) {
-            /* Text below the needle tip */
-            int needle_x = cx + (int)(nlen * cos(rad));
-            int needle_y = cy - (int)(nlen * sin(rad));
-            text_x = needle_x - text_width / 2;
-            text_y = needle_y + th / 2 + 2;
-        } else {
-            /* Text in center */
-            text_x = cx - text_width / 2;
-            text_y = cy - th / 2;
+        double needle_angle = arc_start - value_deg;
+        double rad = needle_angle * M_PI / 180.0;
+        int nlen = Arc->needle_length > 0 ? Arc->needle_length : radius - 8;
+        /* Limit needle length to stay within safe radius */
+        if (nlen > draw_r_max) nlen = draw_r_max;
+        
+        int nx = cx + (int)(nlen * cos(rad));
+        int ny = cy - (int)(nlen * sin(rad));
+        
+        int dx = nx - cx, dy = ny - cy;
+        int steps = (abs(dx) > abs(dy)) ? abs(dx) : abs(dy);
+        if (steps > 0) {
+            int k;
+            for (k = 0; k <= steps; k++) {
+                int px = cx + (dx * k) / steps;
+                int py = cy + (dy * k) / steps;
+                int w;
+                for (w = -Arc->needle_width/2; w <= Arc->needle_width/2; w++) {
+                    int fx = px + (dy != 0 ? w : 0);
+                    int fy = py + (dx != 0 ? w : 0);
+                    if (fx >= 0 && fx < LCOLS && fy >= 0 && fy < LROWS)
+                        drv_generic_graphic_FB[layer][fy * LCOLS + fx] = Arc->needle_color;
+                }
+            }
         }
-
-        /* Clamp text position */
-        if (text_x < col) text_x = col;
-        if (text_x + text_width > col + diameter) text_x = col + diameter - text_width;
-        if (text_y < row) text_y = row;
-        if (text_y + th > row + diameter) text_y = row + diameter - th;
-
-        /* Render text */
-        font_ttf_render(layer, text_x, text_y, Arc->value_text_color, Arc->background_color, text, text_width, 0, th);
+        
+        /* Center dot */
+        int cr = Arc->needle_width + 2;
+        int dy2, dx2;
+        for (dy2 = -cr; dy2 <= cr; dy2++) {
+            for (dx2 = -cr; dx2 <= cr; dx2++) {
+                if (dx2*dx2 + dy2*dy2 <= cr*cr) {
+                    int px = cx + dx2, py = cy + dy2;
+                    if (px >= 0 && px < LCOLS && py >= 0 && py < LROWS)
+                        drv_generic_graphic_FB[layer][py * LCOLS + px] = Arc->center_color;
+                }
+            }
+        }
     }
 
-    /* Flush to display */
-    drv_generic_graphic_blit(row, col, diameter, diameter);
+    /* Draw value text */
+    if (Arc->show_value && font_ttf_is_available()) {
+        char buf[32];
+        /* Format value with proper decimal point */
+        int int_part = (int)value;
+        int frac_part = (int)((value - int_part) * 10) % 10;
+        if (Arc->value_unit && Arc->value_unit[0]) {
+            snprintf(buf, sizeof(buf), "%d.%d%s", int_part, frac_part, Arc->value_unit);
+        } else {
+            snprintf(buf, sizeof(buf), "%d.%d", int_part, frac_part);
+        }
+        
+        int th = Arc->value_text_size > 0 ? Arc->value_text_size : 12;
+        int tw = strlen(buf) * (th * 6 / 10);
+        int tx = cx - tw / 2;
+        int ty = cy + th / 2 + 5;
+        
+        if (tx < col) tx = col;
+        if (tx + tw > col + diameter) tx = col + diameter - tw;
+        if (ty < row) ty = row;
+        if (ty + th > row + diameter) ty = row + diameter - th;
+        
+        font_ttf_render(layer, tx, ty, Arc->value_text_color, NO_COL, buf, tw, 0, th);
+    }
 
+    drv_generic_graphic_blit(row, col, diameter, diameter);
     return 0;
 }
 

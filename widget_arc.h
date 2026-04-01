@@ -27,6 +27,8 @@ typedef struct WIDGET_ARC {
     /* Value display */
     int show_value;         /* 1=show value text, 0=hide */
     int value_text_size;    /* Text size in pixels */
+    int value_precision;    /* Decimal places: 0, 1, or 2 */
+    char *value_unit;       /* Unit suffix (e.g., "%", "°C") */
     char *value_font;       /* Font name for value */
     int value_bold;         /* 1=bold, 0=normal */
     int value_italic;       /* 1=italic, 0=normal */

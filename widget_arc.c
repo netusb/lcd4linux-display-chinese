@@ -78,6 +78,8 @@ int widget_arc_init(WIDGET * Self)
     Arc->thickness = 10;        /* Default thickness */
     Arc->show_value = 1;        /* Show value by default */
     Arc->value_text_size = 12;  /* Default text size */
+    Arc->value_precision = 1;   /* Default 1 decimal place */
+    Arc->value_unit = NULL;     /* No unit by default */
     Arc->value_bold = 0;
     Arc->value_italic = 0;
     Arc->show_needle = 1;       /* Show needle by default */
@@ -111,6 +113,8 @@ int widget_arc_init(WIDGET * Self)
     /* Value display settings */
     cfg_number(section, "show_value", 1, 0, 1, &Arc->show_value);
     cfg_number(section, "value_text_size", 12, 6, 48, &Arc->value_text_size);
+    cfg_number(section, "value_precision", 1, 0, 2, &Arc->value_precision);
+    Arc->value_unit = cfg_get(section, "value_unit", "");
     cfg_number(section, "value_bold", 0, 0, 1, &Arc->value_bold);
     cfg_number(section, "value_italic", 0, 0, 1, &Arc->value_italic);
     
