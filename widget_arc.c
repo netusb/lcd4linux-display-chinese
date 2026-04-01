@@ -76,7 +76,6 @@ int widget_arc_init(WIDGET * Self)
     /* Default values - AIDA64 style */
     Arc->diameter = 100;        /* Default diameter */
     Arc->thickness = 10;        /* Default thickness */
-    Arc->start_angle = 0;       /* 0° = start from right */
     Arc->show_value = 1;        /* Show value by default */
     Arc->value_text_size = 12;  /* Default text size */
     Arc->value_bold = 0;
@@ -108,7 +107,6 @@ int widget_arc_init(WIDGET * Self)
     /* Basic appearance settings */
     cfg_number(section, "diameter", 100, 20, 500, &Arc->diameter);
     cfg_number(section, "thickness", 10, 2, 50, &Arc->thickness);
-    cfg_number(section, "start_angle", 0, 0, 360, &Arc->start_angle);
     
     /* Value display settings */
     cfg_number(section, "show_value", 1, 0, 1, &Arc->show_value);
@@ -133,8 +131,8 @@ int widget_arc_init(WIDGET * Self)
     cfg_number(section, "limit_3", 90.0, 0, 100000, &Arc->limit_3);
     cfg_number(section, "limit_max", 100.0, 0, 100000, &Arc->limit_max);
 
-    info("ARC init: name=%s diameter=%d thickness=%d start_angle=%.0f show_value=%d reverse=%d", 
-         Self->name, Arc->diameter, Arc->thickness, Arc->start_angle, Arc->show_value, Arc->reverse);
+    info("ARC init: name=%s diameter=%d thickness=%d show_value=%d reverse=%d", 
+         Self->name, Arc->diameter, Arc->thickness, Arc->show_value, Arc->reverse);
 
     /* Set widget size based on diameter */
     Self->x2 = Self->col + Arc->diameter;

@@ -23,7 +23,6 @@ typedef struct WIDGET_ARC {
     /* Basic appearance */
     int diameter;           /* Diameter in pixels */
     int thickness;          /* Arc thickness in pixels */
-    double start_angle;     /* Start angle (0=right, 90=down, 180=left, 270=up) */
     
     /* Value display */
     int show_value;         /* 1=show value text, 0=hide */

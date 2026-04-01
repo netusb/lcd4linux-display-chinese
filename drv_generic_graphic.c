@@ -1073,46 +1073,42 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     else
         normalized = 0;
 
-    /* Setup arc parameters */
-    /* start_angle: where arc starts in screen coordinates (0=right, 90=down, 180=left, 270=up) */
-    arc_start_angle = Arc->start_angle;
-    while (arc_start_angle < 0) arc_start_angle += 360;
-    while (arc_start_angle >= 360) arc_start_angle -= 360;
-
-    /* reverse: controls draw direction from start_angle
-       reverse=1: angle decreases (via top, e.g. 0°→270°→180° = right→top→left)
-       reverse=0: angle increases (via bottom, e.g. 0°→90°→180° = right→bottom→left) */
+    /* Setup arc parameters - arc always goes through top (270°)
+       reverse=1: from left(180°) via top(270°) to right(0°) - angle increases
+       reverse=0: from right(0°) via top(270°) to left(180°) - angle decreases */
 
     /* total_range: half circle = 180 degrees */
     total_range = 180.0;
     sweep_deg = total_range;
 
-    /* Arc direction: 0=angle decreases (via top), 1=angle increases (via bottom) */
-    arc_direction = Arc->reverse ? 0 : 1;
+    /* Start angle based on reverse */
+    if (Arc->reverse) {
+        arc_start_angle = 180;  /* Start from left */
+        arc_direction = 1;      /* Angle increases: 180°→270°→0° */
+    } else {
+        arc_start_angle = 0;    /* Start from right */
+        arc_direction = 0;      /* Angle decreases: 0°→270°→180° */
+    }
 
-    /* Calculate arc end angle from start_angle based on value */
+    /* Calculate arc end angle based on value */
     if (arc_direction) {
-        /* Angle increases from start_angle (via bottom) */
+        /* Angle increases from 180° */
         arc_end_angle = arc_start_angle + normalized * total_range;
     } else {
-        /* Angle decreases from start_angle (via top) */
+        /* Angle decreases from 0° */
         arc_end_angle = arc_start_angle - normalized * total_range;
     }
     while (arc_end_angle < 0) arc_end_angle += 360;
     while (arc_end_angle >= 360) arc_end_angle -= 360;
 
-    /* Draw background arc from start_angle in the direction of reverse */
+    /* Draw background arc */
     {
         double bg_end;
         if (arc_direction) {
-            /* Angle increases */
-            bg_end = arc_start_angle + total_range;
+            bg_end = arc_start_angle + total_range;  /* 180° + 180° = 360° = 0° */
         } else {
-            /* Angle decreases */
-            bg_end = arc_start_angle - total_range;
+            bg_end = arc_start_angle - total_range;  /* 0° - 180° = -180° = 180° */
         }
-        while (bg_end < 0) bg_end += 360;
-        while (bg_end >= 360) bg_end -= 360;
         while (bg_end < 0) bg_end += 360;
         while (bg_end >= 360) bg_end -= 360;
 
