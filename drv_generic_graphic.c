@@ -1054,9 +1054,18 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     if (value > Arc->max) value = Arc->max;
     double normalized = (Arc->max > Arc->min) ? (value - Arc->min) / (Arc->max - Arc->min) : 0;
 
-    /* AIDA64 style: always from left(180°) through top(90°) to right(0°) */
+    /* AIDA64 style: 180° arc through top (90°)
+       reverse=1: from left(180°) → top(90°) → right(0°)
+       reverse=0: from right(0°) → top(90°) → left(180°) */
     /* Y-flip: y = cy - r*sin(a), so sin positive = up */
-    double arc_start = 180.0;
+    double arc_start, arc_direction;
+    if (Arc->reverse) {
+        arc_start = 180.0;   /* Start from left */
+        arc_direction = -1.0; /* Go clockwise (180° → 90° → 0°) */
+    } else {
+        arc_start = 0.0;     /* Start from right */
+        arc_direction = 1.0;  /* Go counter-clockwise (0° → 90° → 180°) */
+    }
     double arc_total = 180.0;
     double value_deg = normalized * arc_total;
 
@@ -1071,7 +1080,7 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     if (Arc->show_background) {
         double a;
         for (a = 0; a <= arc_total; a += 1.0) {
-            double angle = arc_start - a;
+            double angle = arc_start + arc_direction * a;
             double rad = angle * M_PI / 180.0;
             
             int r;
@@ -1088,7 +1097,7 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     if (value_deg > 0.5) {
         double a;
         for (a = 0; a < value_deg; a += 0.5) {
-            double angle = arc_start - a;  /* 180° → 90° → 0° */
+            double angle = arc_start + arc_direction * a;
             double rad = angle * M_PI / 180.0;
             
             /* Color based on position */
@@ -1111,7 +1120,7 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
 
     /* Draw needle - ensure it stays within diameter */
     if (Arc->show_needle) {
-        double needle_angle = arc_start - value_deg;
+        double needle_angle = arc_start + arc_direction * value_deg;
         double rad = needle_angle * M_PI / 180.0;
         int nlen = Arc->needle_length > 0 ? Arc->needle_length : radius - 8;
         /* Limit needle length to stay within safe radius */
