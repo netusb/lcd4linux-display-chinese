@@ -1133,13 +1133,21 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
         int steps = (abs(dx) > abs(dy)) ? abs(dx) : abs(dy);
         if (steps > 0) {
             int k;
+            /* Calculate perpendicular direction for consistent thickness */
+            double len = sqrt(dx*dx + dy*dy);
+            double px_dir = (len > 0) ? -dy / len : 0;  /* Perpendicular x */
+            double py_dir = (len > 0) ? dx / len : 1;   /* Perpendicular y */
+            int half_width = Arc->needle_width / 2;
+            
             for (k = 0; k <= steps; k++) {
-                int px = cx + (dx * k) / steps;
-                int py = cy + (dy * k) / steps;
+                int base_x = cx + (dx * k) / steps;
+                int base_y = cy + (dy * k) / steps;
+                
+                /* Draw perpendicular to needle direction */
                 int w;
-                for (w = -Arc->needle_width/2; w <= Arc->needle_width/2; w++) {
-                    int fx = px + (dy != 0 ? w : 0);
-                    int fy = py + (dx != 0 ? w : 0);
+                for (w = -half_width; w <= half_width; w++) {
+                    int fx = base_x + (int)(px_dir * w);
+                    int fy = base_y + (int)(py_dir * w);
                     if (fx >= 0 && fx < LCOLS && fy >= 0 && fy < LROWS)
                         drv_generic_graphic_FB[layer][fy * LCOLS + fx] = Arc->needle_color;
                 }
@@ -1163,13 +1171,33 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
     /* Draw value text */
     if (Arc->show_value && font_ttf_is_available()) {
         char buf[32];
-        /* Format value with proper decimal point */
-        int int_part = (int)value;
-        int frac_part = (int)((value - int_part) * 10) % 10;
-        if (Arc->value_unit && Arc->value_unit[0]) {
-            snprintf(buf, sizeof(buf), "%d.%d%s", int_part, frac_part, Arc->value_unit);
+        /* Format value based on value_precision config */
+        int prec = Arc->value_precision;
+        if (prec <= 0) {
+            /* Integer format */
+            if (Arc->value_unit && Arc->value_unit[0]) {
+                snprintf(buf, sizeof(buf), "%d%s", (int)value, Arc->value_unit);
+            } else {
+                snprintf(buf, sizeof(buf), "%d", (int)value);
+            }
+        } else if (prec == 1) {
+            /* 1 decimal place */
+            int int_part = (int)value;
+            int frac_part = (int)((value - int_part) * 10) % 10;
+            if (Arc->value_unit && Arc->value_unit[0]) {
+                snprintf(buf, sizeof(buf), "%d.%d%s", int_part, frac_part, Arc->value_unit);
+            } else {
+                snprintf(buf, sizeof(buf), "%d.%d", int_part, frac_part);
+            }
         } else {
-            snprintf(buf, sizeof(buf), "%d.%d", int_part, frac_part);
+            /* 2 decimal places */
+            int int_part = (int)value;
+            int frac_part = (int)((value - int_part) * 100) % 100;
+            if (Arc->value_unit && Arc->value_unit[0]) {
+                snprintf(buf, sizeof(buf), "%d.%02d%s", int_part, frac_part, Arc->value_unit);
+            } else {
+                snprintf(buf, sizeof(buf), "%d.%02d", int_part, frac_part);
+            }
         }
         
         int th = Arc->value_text_size > 0 ? Arc->value_text_size : 12;
