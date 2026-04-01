@@ -830,7 +830,15 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
             double pct_val = 100.0 * display_val / display_max;
             char text[32];
             int prec = Graph->value_precision;
-            const char *unit = Graph->value_unit ? Graph->value_unit : "%";
+            /* Use unit only if value_unit is set and not empty */
+            const char *unit = "";
+            if (Graph->value_unit && Graph->value_unit[0]) {
+                unit = Graph->value_unit;
+            } else if (!Graph->value_unit) {
+                unit = "%";  /* Default to % if not configured */
+            }
+            /* Debug: print unit info */
+            info("Graph value_unit='%s' ptr=%p first=%d", Graph->value_unit, (void*)Graph->value_unit, Graph->value_unit ? Graph->value_unit[0] : -1);
             
             if (prec <= 0) {
                 snprintf(text, sizeof(text), "%d%s", (int)pct_val, unit);

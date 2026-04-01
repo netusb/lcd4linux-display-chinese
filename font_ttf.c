@@ -215,15 +215,21 @@ static void render_text_horizontal(int layer, int x, int y, RGBA fg, RGBA bg, co
     
     if (max_descent < 0) max_descent = 0;
     
-    /* Clear the background area using configured bg color (only if not transparent) */
-    if (bg.A != 0) {
+    /* Clear the background area using configured bg color */
+    /* Always clear to remove old pixels, even with transparent bg */
+    {
+        RGBA clear_bg = bg;
+        if (clear_bg.A == 0) {
+            /* For transparent bg, use NO_COL to properly clear old pixels */
+            clear_bg = NO_COL;
+        }
         for (int cy = 0; cy < ft_font_height; cy++) {
             for (int cx = 0; cx < total_width + 10; cx++) {
                 int draw_x = x + cx;
                 int draw_y = y + cy;
                 if (draw_x >= 0 && draw_x < LCOLS && 
                     draw_y >= 0 && draw_y < LROWS) {
-                    fb[draw_y * LCOLS + draw_x] = bg;
+                    fb[draw_y * LCOLS + draw_x] = clear_bg;
                 }
             }
         }
