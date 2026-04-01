@@ -99,6 +99,8 @@ int widget_graph_init(WIDGET * Self)
     cfg_number(section, "grid", 3, 0, 10, &Graph->grid_lines);
     cfg_number(section, "value", 1, 0, 1, &Graph->show_value);
     cfg_number(section, "value_size", 10, 6, 24, &Graph->value_size);
+    cfg_number(section, "value_precision", 0, 0, 2, &Graph->value_precision);
+    Graph->value_unit = cfg_get(section, "value_unit", NULL);
     cfg_number(section, "direction", 0, 0, 1, &Graph->direction);
 
     Self->x2 = Self->col + Graph->width;
@@ -206,6 +208,8 @@ int widget_graph_quit(WIDGET * Self)
 		property_free(&Graph->update);
 		if (Graph->data)
 		    free(Graph->data);
+		if (Graph->value_unit)
+		    free(Graph->value_unit);
 		free(Self->data);
 		Self->data = NULL;
 	    }

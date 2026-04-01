@@ -827,9 +827,18 @@ int drv_generic_graphic_graph_draw(WIDGET * W)
         
         /* calculate percentage if max > 0 */
         if (display_max > 0) {
-            int pct = (int)(100 * display_val / display_max);
-            char text[8];
-            snprintf(text, sizeof(text), "%d%%", pct);
+            double pct_val = 100.0 * display_val / display_max;
+            char text[32];
+            int prec = Graph->value_precision;
+            const char *unit = Graph->value_unit ? Graph->value_unit : "%";
+            
+            if (prec <= 0) {
+                snprintf(text, sizeof(text), "%d%s", (int)pct_val, unit);
+            } else if (prec == 1) {
+                snprintf(text, sizeof(text), "%d.%d%s", (int)pct_val, ((int)(pct_val * 10)) % 10, unit);
+            } else {
+                snprintf(text, sizeof(text), "%d.%02d%s", (int)pct_val, ((int)(pct_val * 100)) % 100, unit);
+            }
             
             /* use TTF font for rendering if available */
             if (font_ttf_is_available()) {
