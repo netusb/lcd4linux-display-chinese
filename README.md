@@ -90,27 +90,101 @@ make install
 
 ## 配置示例
 
-### VNC 显示配置
+### VNC 显示配置 (完整示例)
 
 ```conf
 Display VNC {
     Driver       'VNC'
     Font         '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
-    FontSize     '16'        # 可选: 8-64
+    FontSize     '24'
     Port         '5900'
-    Xres         '320'
-    Yres         '240'
+    Xres         '300'
+    Yres         '400'
     Bpp          '4'
 }
 
-Widget Test {
+Variables {
+    tick 500
+}
+
+# CPU 使用率折线图
+Widget CPU_Graph {
+    class 'Graph'
+    expression proc_stat::cpu('busy', 500)
+    min 0
+    max 100
+    width 8
+    height 2
+    points 500
+    style 0
+    grid 3
+    value 1
+    value_size 8
+    value_precision 0
+    value_unit '%'
+    value_bg_color '00000000'    # 透明背景
+    direction 0
+    update 500
+    line_color '00ff00'
+    fill_color '00440080'
+    bg_color 'FF8000'
+    grid_color '333333'
+    text_color 'FFFFFF'
+}
+
+# CPU 使用率弧形仪表盘
+Widget CPU_Arc {
+    class 'Arc'
+    expression proc_stat::cpu('busy', 500)
+    min 0
+    max 100
+    diameter 100
+    thickness 6
+    show_background 1
+    background_color '222222'
+    show_value 1
+    value_text_size 16
+    value_text_color 'ffffff'
+    value_precision 0
+    value_unit ''
+    show_needle 1
+    needle_length 23
+    needle_width 2
+    needle_color 'ff0000'
+    center_color '444444'
+    reverse 1
+    update 500
+    limit_1 33
+    limit_2 66
+    limit_3 90
+    arc_color_min '00ff00'
+    arc_color_1 'ffff00'
+    arc_color_2 'ff8800'
+    arc_color_3 'ff0000'
+    back_color_min '00000000'
+    back_color_1 '00000000'
+    back_color_2 '00000000'
+    back_color_3 '00000000'
+}
+
+# 时间显示
+Widget Time {
     class 'Text'
-    expression '测试中文字符'
-    width 20
+    expression strftime('时间 %H:%M:%S', time())
+    width 16
+    speed 1000
+    fontsize 18
+    font '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
+    Foreground '00FF00'
+    Background '0000CD00'
 }
 
 Layout Main {
-    Row1 { Col1 'Test' }
+    Layer 0 {
+        Row1 { Col1 'Time' }
+        Row6 { Col4 'CPU_Graph' }
+        Row6 { Col4 'CPU_Arc' }
+    }
 }
 
 Display 'VNC'
