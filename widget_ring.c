@@ -77,6 +77,7 @@ int widget_ring_init(WIDGET * Self)
     Ring->diameter = 100;
     Ring->thickness = 10;
     Ring->start_angle = 270;    /* Start from top (270° in math coords = 12 o'clock) */
+    Ring->clockwise = 1;        /* Default: clockwise direction */
     Ring->show_value = 1;
     Ring->value_text_size = 16;
     Ring->value_precision = 0;
@@ -96,6 +97,7 @@ int widget_ring_init(WIDGET * Self)
     cfg_number(section, "diameter", 100, 20, 500, &Ring->diameter);
     cfg_number(section, "thickness", 10, 2, 50, &Ring->thickness);
     cfg_number(section, "start_angle", 270, 0, 360, &Ring->start_angle);
+    cfg_number(section, "clockwise", 1, 0, 1, &Ring->clockwise);
     
     /* Value display settings */
     cfg_number(section, "show_value", 1, 0, 1, &Ring->show_value);
@@ -106,8 +108,8 @@ int widget_ring_init(WIDGET * Self)
     /* Background */
     cfg_number(section, "show_background", 1, 0, 1, &Ring->show_background);
 
-    info("RING init: name=%s diameter=%d thickness=%d start_angle=%d show_value=%d", 
-         Self->name, Ring->diameter, Ring->thickness, Ring->start_angle, Ring->show_value);
+    info("RING init: name=%s diameter=%d thickness=%d start_angle=%d clockwise=%d show_value=%d", 
+         Self->name, Ring->diameter, Ring->thickness, Ring->start_angle, Ring->clockwise, Ring->show_value);
 
     /* Set widget size based on diameter */
     Self->x2 = Self->col + Ring->diameter;

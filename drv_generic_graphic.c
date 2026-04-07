@@ -1245,9 +1245,12 @@ int drv_generic_graphic_ring_draw(WIDGET * W)
     WIDGET_RING *Ring = (WIDGET_RING *) W->data;
     int row = W->row, col = W->col, layer = W->layer;
     
-    /* Convert RC (row/col) to pixel coordinates */
+    /* Save original YRES */
+    int saved_yres = YRES;
+    
+    /* Convert RC (row/col) to pixel coordinates using the display's YRES/XRES */
     if (W->class->type == WIDGET_TYPE_RC) {
-        row = row * YRES;
+        row = row * saved_yres;
         col = col * XRES;
     }
 
@@ -1256,6 +1259,23 @@ int drv_generic_graphic_ring_draw(WIDGET * W)
     int radius = diameter / 2;
     int cx = col + radius;
     int cy = row + radius;
+    int clear_radius = radius + 30;  /* Extra margin for text clearing */
+
+    /* Clear the entire ring area with a proper circle */
+    {
+        int y;
+        for (y = -clear_radius; y <= clear_radius; y++) {
+            int x;
+            for (x = -clear_radius; x <= clear_radius; x++) {
+                if (x * x + y * y <= clear_radius * clear_radius) {
+                    int px = cx + x;
+                    int py = cy + y;
+                    if (px >= 0 && px < LCOLS && py >= 0 && py < LROWS)
+                        drv_generic_graphic_FB[layer][py * LCOLS + px] = NO_COL;
+                }
+            }
+        }
+    }
 
     /* Ensure framebuffer is large enough */
     drv_generic_graphic_resizeFB(row + diameter, col + diameter);
@@ -1273,8 +1293,8 @@ int drv_generic_graphic_ring_draw(WIDGET * W)
 
     /* Draw background ring if enabled */
     if (Ring->show_background) {
-        double a;
-        for (a = 0; a < 360.0; a += 0.5) {
+        int a;
+        for (a = 0; a < 360; a++) {
             double rad = a * M_PI / 180.0;
             int r;
             for (r = draw_r_min; r <= draw_r_max; r++) {
@@ -1286,12 +1306,19 @@ int drv_generic_graphic_ring_draw(WIDGET * W)
         }
     }
 
-    /* Draw value ring from start_angle */
+    /* Draw value ring from start_angle in specified direction */
     double value_deg = normalized * 360.0;
     if (value_deg > 0.5) {
-        double a;
-        for (a = 0; a < value_deg; a += 0.5) {
-            double angle = Ring->start_angle - a;  /* Clockwise from start */
+        int a;
+        int num_steps = (int)value_deg;
+        
+        for (a = 0; a <= num_steps; a++) {
+            double angle;
+            if (Ring->clockwise) {
+                angle = Ring->start_angle + a;
+            } else {
+                angle = Ring->start_angle - a;
+            }
             double rad = angle * M_PI / 180.0;
             
             int r;
@@ -1304,7 +1331,7 @@ int drv_generic_graphic_ring_draw(WIDGET * W)
         }
     }
 
-    /* Draw value text */
+    /* Draw value text - centered in the ring */
     if (Ring->show_value && font_ttf_is_available()) {
         char buf[32];
         int prec = Ring->value_precision;
@@ -1333,19 +1360,18 @@ int drv_generic_graphic_ring_draw(WIDGET * W)
         }
         
         int th = Ring->value_text_size > 0 ? Ring->value_text_size : 12;
-        int tw = strlen(buf) * (th * 6 / 10);
-        int tx = cx - tw / 2;
-        int ty = cy - th / 2;
+        int text_len = strlen(buf);
+        int tw = text_len * (th * 6 / 10);
         
-        if (tx < col) tx = col;
-        if (tx + tw > col + diameter) tx = col + diameter - tw;
-        if (ty < row) ty = row;
-        if (ty + th > row + diameter) ty = row + diameter - th;
+        /* Center text at ring center */
+        int ty = cy - saved_yres / 2;
+        int tx = cx - tw / 2;
         
         font_ttf_render(layer, tx, ty, Ring->value_text_color, NO_COL, buf, tw, 0, th);
     }
 
-    drv_generic_graphic_blit(row, col, diameter, diameter);
+    drv_generic_graphic_blit(row, col, diameter + 30, diameter + 30);
+    YRES = saved_yres;
     return 0;
 }
 

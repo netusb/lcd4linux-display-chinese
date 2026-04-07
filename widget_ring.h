@@ -24,6 +24,7 @@ typedef struct WIDGET_RING {
     int diameter;           /* Diameter in pixels */
     int thickness;          /* Ring thickness in pixels */
     int start_angle;        /* Start angle in degrees (0=right, 90=top, 180=left, 270=bottom) */
+    int clockwise;          /* Direction: 1=clockwise, 0=counter-clockwise */
     
     /* Value display */
     int show_value;         /* 1=show value text, 0=hide */
