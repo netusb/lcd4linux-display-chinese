@@ -50,6 +50,7 @@ widget_timer.c widget_timer.h \
 widget_gpo.c  widget_gpo.h    \
 widget_graph.c widget_graph.h \
 widget_arc.c   widget_arc.h   \
+widget_ring.c  widget_ring.h  \
 font_ttf.c    font_ttf.h     \
                               \
 plugin.c      plugin.h        \

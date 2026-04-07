@@ -72,6 +72,7 @@
 #include "widget_image.h"
 #include "widget_graph.h"
 #include "widget_arc.h"
+#include "widget_ring.h"
 #include "rgb.h"
 #include "drv.h"
 #include "drv_generic.h"
@@ -1236,6 +1237,120 @@ int drv_generic_graphic_arc_draw(WIDGET * W)
 
 
 /****************************************/
+/*** ring progress widget             ***/
+/****************************************/
+
+int drv_generic_graphic_ring_draw(WIDGET * W)
+{
+    WIDGET_RING *Ring = (WIDGET_RING *) W->data;
+    int row = W->row, col = W->col, layer = W->layer;
+    
+    /* Convert RC (row/col) to pixel coordinates */
+    if (W->class->type == WIDGET_TYPE_RC) {
+        row = row * YRES;
+        col = col * XRES;
+    }
+
+    /* Get widget properties */
+    int diameter = Ring->diameter;
+    int radius = diameter / 2;
+    int cx = col + radius;
+    int cy = row + radius;
+
+    /* Ensure framebuffer is large enough */
+    drv_generic_graphic_resizeFB(row + diameter, col + diameter);
+
+    /* Get and clamp value */
+    double value = Ring->value;
+    if (value < Ring->min) value = Ring->min;
+    if (value > Ring->max) value = Ring->max;
+    double normalized = (Ring->max > Ring->min) ? (value - Ring->min) / (Ring->max - Ring->min) : 0;
+
+    /* Calculate safe radius range */
+    int draw_r_max = radius - 1;
+    int draw_r_min = draw_r_max - Ring->thickness + 1;
+    if (draw_r_min < 1) draw_r_min = 1;
+
+    /* Draw background ring if enabled */
+    if (Ring->show_background) {
+        double a;
+        for (a = 0; a < 360.0; a += 0.5) {
+            double rad = a * M_PI / 180.0;
+            int r;
+            for (r = draw_r_min; r <= draw_r_max; r++) {
+                int x = cx + (int)(r * cos(rad));
+                int y = cy - (int)(r * sin(rad));
+                if (x >= 0 && x < LCOLS && y >= 0 && y < LROWS)
+                    drv_generic_graphic_FB[layer][y * LCOLS + x] = Ring->background_color;
+            }
+        }
+    }
+
+    /* Draw value ring from start_angle */
+    double value_deg = normalized * 360.0;
+    if (value_deg > 0.5) {
+        double a;
+        for (a = 0; a < value_deg; a += 0.5) {
+            double angle = Ring->start_angle - a;  /* Clockwise from start */
+            double rad = angle * M_PI / 180.0;
+            
+            int r;
+            for (r = draw_r_min; r <= draw_r_max; r++) {
+                int x = cx + (int)(r * cos(rad));
+                int y = cy - (int)(r * sin(rad));
+                if (x >= 0 && x < LCOLS && y >= 0 && y < LROWS)
+                    drv_generic_graphic_FB[layer][y * LCOLS + x] = Ring->ring_color;
+            }
+        }
+    }
+
+    /* Draw value text */
+    if (Ring->show_value && font_ttf_is_available()) {
+        char buf[32];
+        int prec = Ring->value_precision;
+        if (prec <= 0) {
+            if (Ring->value_unit && Ring->value_unit[0]) {
+                snprintf(buf, sizeof(buf), "%d%s", (int)value, Ring->value_unit);
+            } else {
+                snprintf(buf, sizeof(buf), "%d", (int)value);
+            }
+        } else if (prec == 1) {
+            int int_part = (int)value;
+            int frac_part = (int)((value - int_part) * 10) % 10;
+            if (Ring->value_unit && Ring->value_unit[0]) {
+                snprintf(buf, sizeof(buf), "%d.%d%s", int_part, frac_part, Ring->value_unit);
+            } else {
+                snprintf(buf, sizeof(buf), "%d.%d", int_part, frac_part);
+            }
+        } else {
+            int int_part = (int)value;
+            int frac_part = (int)((value - int_part) * 100) % 100;
+            if (Ring->value_unit && Ring->value_unit[0]) {
+                snprintf(buf, sizeof(buf), "%d.%02d%s", int_part, frac_part, Ring->value_unit);
+            } else {
+                snprintf(buf, sizeof(buf), "%d.%02d", int_part, frac_part);
+            }
+        }
+        
+        int th = Ring->value_text_size > 0 ? Ring->value_text_size : 12;
+        int tw = strlen(buf) * (th * 6 / 10);
+        int tx = cx - tw / 2;
+        int ty = cy - th / 2;
+        
+        if (tx < col) tx = col;
+        if (tx + tw > col + diameter) tx = col + diameter - tw;
+        if (ty < row) ty = row;
+        if (ty + th > row + diameter) ty = row + diameter - th;
+        
+        font_ttf_render(layer, tx, ty, Ring->value_text_color, NO_COL, buf, tw, 0, th);
+    }
+
+    drv_generic_graphic_blit(row, col, diameter, diameter);
+    return 0;
+}
+
+
+/****************************************/
 /*** generic init/quit                ***/
 /****************************************/
 
@@ -1323,6 +1438,11 @@ int drv_generic_graphic_init(const char *section, const char *driver)
     /* register arc widget */
     wc = Widget_Arc;
     wc.draw = drv_generic_graphic_arc_draw;
+    widget_register(&wc);
+
+    /* register ring widget */
+    wc = Widget_Ring;
+    wc.draw = drv_generic_graphic_ring_draw;
     widget_register(&wc);
 
     /* clear framebuffer but do not blit to display */
