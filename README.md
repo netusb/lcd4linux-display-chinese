@@ -322,6 +322,53 @@ Widget CPU_Arc {
 }
 ```
 
+## Ring 组件 (环形进度条)
+
+Ring 组件用于显示单个数值的 360° 环形进度条，类似于 AIDA64 的圆形传感器显示。
+
+### 配置参数
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| expression | 数据表达式 | 必需 |
+| min | 最小值 | 0 |
+| max | 最大值 | 100 |
+| update | 更新间隔(毫秒) | 1000 |
+| diameter | 直径(像素) | 100 |
+| thickness | 环形粗细(像素) | 10 |
+| start_angle | 起始角度 (0=右, 90=上, 180=左, 270=下) | 270 |
+| show_background | 显示背景环 (0/1) | 1 |
+| background_color | 背景环颜色 | #282828 |
+| show_value | 显示数值 (0/1) | 1 |
+| value_text_size | 数值文字大小(像素) | 16 |
+| value_text_color | 数值文字颜色 | #FFFFFF |
+| value_precision | 数值小数位数 (0,1,2) | 0 |
+| value_unit | 数值单位后缀 | "" |
+| ring_color | 进度条颜色 | #00FF00 |
+
+### 使用示例
+
+```conf
+Widget CPU_Ring {
+    class 'Ring'
+    expression proc_stat::cpu('busy', 500)
+    min 0
+    max 100
+    diameter 80
+    thickness 8
+    start_angle 270            # 从顶部开始顺时针
+    show_value 1
+    value_text_size 14
+    value_precision 0
+    value_unit '%'
+    value_text_color 'ffffff'
+    show_background 1
+    background_color '333333'
+    ring_color '00ff00'
+    update 500
+}
+```
+
 ## 字体配置
 
 ### 安装中文字体
@@ -350,6 +397,8 @@ fc-list :lang=zh
 ├── widget_graph.h      # Graph 组件头文件
 ├── widget_arc.c        # Arc 组件实现
 ├── widget_arc.h        # Arc 组件头文件
+├── widget_ring.c       # Ring 组件实现
+├── widget_ring.h       # Ring 组件头文件
 ├── drv_vnc.c           # VNC 驱动 (已修改支持中文)
 ├── drv_dpf.c           # DPF 驱动 (已修改支持中文)
 ├── drv_generic_graphic.c # 通用图形驱动
