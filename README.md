@@ -67,25 +67,40 @@ yum install -y \
 
 ```bash
 # 1. 进入源码目录
-cd lcd4linux-0.11.0~svn1203
+cd lcd4linux-display-chinese
 
-# 2. 生成配置文件
+# 2. 安装编译依赖
+apt-get install -y build-essential autoconf automake libtool gettext pkg-config
+apt-get install -y libvncserver-dev libfreetype-dev libgd-dev libjpeg-dev libusb-1.0-0-dev libusb-dev libx11-dev libncurses-dev
+
+# 3. 生成配置文件
 ./bootstrap
 
-# 3. 配置 (启用所有驱动)
-./configure --with-drivers=all
+# 4. 配置 (启用所有驱动)
+# 注意: 需要添加 LIBS="-lfreetype" 解决 FreeType 链接问题
+./configure --with-drivers=all LIBS="-lfreetype"
 
-# 4. 编译
+# 5. 编译
 make -j$(nproc)
 
-# 5. 安装
+# 6. 安装
 make install
 ```
 
 或指定特定驱动：
 
 ```bash
-./configure --with-drivers=VNC,DPF
+./configure --with-drivers=VNC,X11,DPF LIBS="-lfreetype"
+```
+
+### 编译后运行
+
+```bash
+# 查看可用驱动和插件
+./lcd4linux -l
+
+# 使用 VNC 驱动测试
+./lcd4linux -f lcd4linux.conf.sample -F -v
 ```
 
 ## 配置示例
